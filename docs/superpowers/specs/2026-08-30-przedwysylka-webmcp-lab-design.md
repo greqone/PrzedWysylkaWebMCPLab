@@ -75,7 +75,7 @@ The default demo uses the official parameterized FA(3) template. The raw templat
 ## Verification
 
 - Hash and count gate for all locked source records.
-- Native `xmllint` baseline and `xmllint-wasm` parity for 26 valid examples plus expected-invalid templates.
+- Browser `xmllint-wasm` corpus validation plus an independent native `xmllint` validity-class check for 26 valid examples and expected-invalid templates.
 - Unit tests for registry filters, normalized findings, replacement atomicity, stale proposal protection, and history.
 - Adapter tests proving six tools register with correct schemas/annotations and that staging cannot apply changes.
 - Playwright flow with an injected WebMCP harness: discover → select → validate → stage → human approve → revalidate.

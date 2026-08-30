@@ -76,7 +76,7 @@ The automated suite proves:
 - complete 36-record manifest and byte hashes;
 - all 26 Ministry examples pass canonical FA(3) validation;
 - all three raw CIRFMF FA(3) templates are expected-invalid;
-- WASM and native `xmllint` parity;
+- browser-WASM corpus validation plus an independent native `xmllint` validity-class check;
 - atomic/stale-safe proposal behavior;
 - exactly six registered WebMCP tools and no approval tool;
 - real Chromium agent → validation → stage → human approval → valid revision flow;

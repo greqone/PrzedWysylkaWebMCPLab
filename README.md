@@ -51,6 +51,8 @@ The repository does not cherry-pick convenient examples.
 
 That is **36 locked source records: 30 XML and 6 XSD**. Every record includes its source URL/path, upstream revision where applicable, byte length, SHA-256, namespace, role, and expected validation class in [`data/official-assets.lock.json`](data/official-assets.lock.json).
 
+The bundled XML/XSD files are excluded from this repository's MIT license. See the [notice stored beside the assets](public/official-assets/NOTICE.md) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
 `npm run verify:assets` hashes all 36 files. Git treats official assets as binary (`-text -diff`) so Windows line-ending conversion cannot corrupt upstream bytes. Every browser fetch also verifies the exact byte count and SHA-256 before decoding or displaying the source.
 
 ## Privacy and safety
@@ -100,15 +102,15 @@ npm run build           # production bundle, browser worker, and WASM
 npm run test:e2e        # real Chromium + WebMCP harness + Axe
 ```
 
-Optional independent native parity gate:
+Optional independent native validity-class gate:
 
 ```bash
 npm run verify:native
 ```
 
-It validates all 26 Ministry examples and rejects all three raw CIRFMF templates with system `xmllint`. Set `XMLLINT_BIN` if `xmllint` is not on `PATH`.
+It independently confirms that system `xmllint` accepts all 26 Ministry examples and rejects all three raw CIRFMF templates. It compares validity classes, not diagnostic text or line-number identity. Set `XMLLINT_BIN` if `xmllint` is not on `PATH`.
 
-To regenerate the committed product screenshot from a fresh production build:
+To regenerate the committed product screenshot from a fresh local production build and execute the registered WebMCP select → validate → stage flow:
 
 ```bash
 npm run capture:demo

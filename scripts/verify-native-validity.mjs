@@ -92,11 +92,13 @@ try {
   }
 
   if (failures.length) {
-    console.error(`Native parity failed:\n${failures.join("\n")}`);
+    console.error(
+      `Native validity-class check failed:\n${failures.join("\n")}`,
+    );
     process.exitCode = 1;
   } else {
     console.log(
-      "Native parity verified: 26 valid MF examples and 3 expected-invalid CIRFMF templates.",
+      "Native validity-class check verified: 26 valid MF examples and 3 expected-invalid CIRFMF templates.",
     );
   }
 } finally {

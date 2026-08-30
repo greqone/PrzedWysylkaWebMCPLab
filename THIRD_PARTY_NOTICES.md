@@ -2,6 +2,8 @@
 
 The project MIT license covers original source code in this repository. It does not relicense official XML/XSD source material or third-party packages.
 
+An additional license-boundary notice is stored directly beside the bundled files at [`public/official-assets/NOTICE.md`](public/official-assets/NOTICE.md). It remains part of every static build but is not one of the 36 locked XML/XSD source records.
+
 ## Ministry of Finance / Krajowy System e-Faktur
 
 The repository includes unmodified example XML files downloaded from the official KSeF 2.0 download page:

@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify:assets": "node scripts/verify-official-assets.mjs",
-    "verify:native": "node scripts/verify-native-parity.mjs",
+    "verify:native": "node scripts/verify-native-validity.mjs",
     "test:e2e": "playwright test",
     "capture:demo": "npm run build && node scripts/capture-demo.mjs"
   },

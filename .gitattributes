@@ -1,2 +1,3 @@
 * text=auto eol=lf
 public/official-assets/** -text -diff
+public/official-assets/NOTICE.md text eol=lf diff

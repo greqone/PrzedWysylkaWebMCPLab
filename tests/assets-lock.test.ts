@@ -6,6 +6,7 @@ import { describe, expect, test } from "vitest";
 const root = resolve(import.meta.dirname, "..");
 const manifestPath = resolve(root, "data/official-assets.lock.json");
 const attributesPath = resolve(root, ".gitattributes");
+const noticePath = resolve(root, "public/official-assets/NOTICE.md");
 
 type LockedAsset = {
   id: string;
@@ -45,6 +46,20 @@ describe("official asset lock", () => {
     expect(existsSync(attributesPath), ".gitattributes must exist").toBe(true);
     const attributes = readFileSync(attributesPath, "utf8");
     expect(attributes).toContain("public/official-assets/** -text");
+  });
+
+  test("places an explicit MIT-license exclusion beside official assets", () => {
+    expect(existsSync(noticePath), "official asset NOTICE must exist").toBe(
+      true,
+    );
+    if (!existsSync(noticePath)) return;
+
+    const notice = readFileSync(noticePath, "utf8");
+    const attributes = readFileSync(attributesPath, "utf8");
+    expect(notice).toContain("not covered by the repository MIT license");
+    expect(attributes).toContain(
+      "public/official-assets/NOTICE.md text eol=lf diff",
+    );
   });
 
   test("locks every asset to an existing local file and SHA-256", () => {

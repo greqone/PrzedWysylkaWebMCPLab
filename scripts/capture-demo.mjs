@@ -5,26 +5,37 @@ import { resolve } from "node:path";
 
 import { chromium } from "playwright";
 
-const externalUrl = process.env.DEMO_URL;
-const baseUrl = externalUrl ?? "http://127.0.0.1:4175";
+if (process.env.DEMO_URL !== undefined) {
+  throw new Error(
+    "DEMO_URL is not supported; capture:demo only runs the repository's local production preview",
+  );
+}
+
+const baseUrl = "http://127.0.0.1:4175";
 const output = resolve("docs/assets/workbench.png");
+const expectedToolNames = [
+  "get_workspace_status",
+  "list_official_assets",
+  "read_official_asset",
+  "select_official_asset",
+  "stage_exact_replacements",
+  "validate_workspace",
+];
 await mkdir(resolve("docs/assets"), { recursive: true });
 
-const server = externalUrl
-  ? null
-  : spawn(
-      process.execPath,
-      [
-        resolve("node_modules/vite/bin/vite.js"),
-        "preview",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "4175",
-        "--strictPort",
-      ],
-      { stdio: ["ignore", "pipe", "pipe"] },
-    );
+const server = spawn(
+  process.execPath,
+  [
+    resolve("node_modules/vite/bin/vite.js"),
+    "preview",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "4175",
+    "--strictPort",
+  ],
+  { stdio: ["ignore", "pipe", "pipe"] },
+);
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 50; attempt += 1) {
@@ -57,6 +68,19 @@ try {
   });
   await page.addInitScript(() => {
     const tools = new Map();
+    Object.defineProperty(globalThis, "__webMcpCaptureHarness", {
+      configurable: true,
+      value: {
+        names: () => [...tools.keys()].sort(),
+        async execute(name, input) {
+          const tool = tools.get(name);
+          if (!tool) throw new Error(`Tool is not registered: ${name}`);
+          return tool.execute(input, {
+            signal: new AbortController().signal,
+          });
+        },
+      },
+    });
     Object.defineProperty(globalThis.document, "modelContext", {
       configurable: true,
       value: {
@@ -74,9 +98,46 @@ try {
 
   await page.goto(baseUrl);
   await page.getByText("6 WebMCP tools live").waitFor();
-  await page.getByRole("button", { name: "Validate XML" }).click();
+  const registeredNames = await page.evaluate(() =>
+    globalThis.__webMcpCaptureHarness.names(),
+  );
+  if (JSON.stringify(registeredNames) !== JSON.stringify(expectedToolNames)) {
+    throw new Error(
+      `Unexpected WebMCP tool surface: ${registeredNames.join(", ")}`,
+    );
+  }
+  const forbiddenTools = registeredNames.filter((name) =>
+    /approve|apply|download|export|reject|submit|upload/iu.test(name),
+  );
+  if (forbiddenTools.length) {
+    throw new Error(
+      `Forbidden WebMCP tools registered: ${forbiddenTools.join(", ")}`,
+    );
+  }
+
+  await page.evaluate(async () => {
+    const harness = globalThis.__webMcpCaptureHarness;
+    await harness.execute("select_official_asset", {
+      assetId: "cirfmf-template-base",
+    });
+    await harness.execute("validate_workspace", {});
+    await harness.execute("stage_exact_replacements", {
+      summary: "Replace both official CIRFMF template placeholders",
+      replacements: [
+        {
+          search: "#nip#",
+          replacement: "1111111111",
+          reason: "Use a schema-compatible ten-digit demonstration NIP",
+        },
+        {
+          search: "#invoice_number#",
+          replacement: "FV/2026/001",
+          reason: "Use a deterministic demonstration invoice number",
+        },
+      ],
+    });
+  });
   await page.getByText("Needs attention").waitFor();
-  await page.getByRole("button", { name: "Stage guided repair" }).click();
   await page.getByRole("heading", { name: "Pending human approval" }).waitFor();
   await page.screenshot({ path: output, fullPage: true });
 
