@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AssetKind, AssetRecord } from "../assets/types";
 
@@ -32,6 +32,7 @@ export function AssetLibrary({
 }: AssetLibraryProps) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<AssetKind | "all">("all");
+  const selectedElement = useRef<HTMLButtonElement | null>(null);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("en");
@@ -43,6 +44,18 @@ export function AssetLibrary({
         .includes(needle);
     });
   }, [assets, kind, query]);
+
+  useEffect(() => {
+    const element = selectedElement.current;
+    const container = element?.parentElement;
+    if (!element || !container) return;
+
+    const itemTop = element.offsetTop - container.offsetTop;
+    container.scrollTop = Math.max(
+      0,
+      itemTop - (container.clientHeight - element.offsetHeight) / 2,
+    );
+  }, [selectedId]);
 
   return (
     <aside
@@ -92,6 +105,9 @@ export function AssetLibrary({
               key={asset.id}
               type="button"
               className={`asset-item${selected ? " is-selected" : ""}`}
+              ref={(element) => {
+                if (selected) selectedElement.current = element;
+              }}
               aria-current={selected ? "true" : undefined}
               onClick={() => onSelect(asset.id)}
               disabled={loading}

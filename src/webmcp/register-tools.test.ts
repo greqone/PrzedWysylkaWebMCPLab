@@ -93,6 +93,10 @@ describe("WebMCP registration", () => {
       registered.find(({ tool }) => tool.name === "list_official_assets")?.tool
         .annotations?.readOnlyHint,
     ).toBe(true);
+    expect(
+      registered.find(({ tool }) => tool.name === "validate_workspace")?.tool
+        .annotations?.readOnlyHint,
+    ).not.toBe(true);
 
     registration.controller?.abort();
     expect(
@@ -148,6 +152,49 @@ describe("WebMCP registration", () => {
     expect(store.getState().pendingProposal?.proposedContent).toBe(
       "<NIP>1111111111</NIP>",
     );
+  });
+
+  test("refuses to stage replacements against an XSD source", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const store = modules.store.createWorkspaceStore();
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => "<schema>#value#</schema>",
+      validateCurrent: async () => ({
+        valid: true,
+        findings: [],
+        rawOutput: "",
+      }),
+    });
+    const signal = new AbortController().signal;
+    await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "crd-fa3-schema" }, { signal });
+
+    expect(() =>
+      tools.get("stage_exact_replacements")?.execute(
+        {
+          summary: "Do not allow schema edits",
+          replacements: [
+            {
+              search: "#value#",
+              replacement: "changed",
+              reason: "Attempted XSD edit",
+            },
+          ],
+        },
+        { signal },
+      ),
+    ).toThrow("not an FA(3) XML document");
+    expect(store.getState().pendingProposal).toBeNull();
   });
 
   test("reports unsupported without registering a fake production API", async () => {

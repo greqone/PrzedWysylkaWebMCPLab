@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentType } from "react";
 import { afterEach, describe, expect, test } from "vitest";
@@ -67,6 +67,17 @@ function createDependencies(): AppDependencies {
   };
 }
 
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve(value: T): void;
+} {
+  let resolvePromise!: (value: T) => void;
+  const promise = new Promise<T>((resolve) => {
+    resolvePromise = resolve;
+  });
+  return { promise, resolve: resolvePromise };
+}
+
 describe("FA(3) workbench", () => {
   test("keeps an agent proposal pending until human approval and revalidation", async () => {
     const module = await loadApp();
@@ -122,5 +133,55 @@ describe("FA(3) workbench", () => {
 
     expect(screen.queryByText("Pending human approval")).toBeNull();
     expect(screen.getByTestId("source-code").textContent).toContain("#nip#");
+  });
+
+  test("keeps the newest asset selection when loads resolve out of order", async () => {
+    const module = await loadApp();
+    expect(module, "App module must exist").not.toBeNull();
+    if (!module) return;
+
+    const dependencies = createDependencies();
+    const first = deferred<string>();
+    const second = deferred<string>();
+    dependencies.loadAssetText = async (assetId) => {
+      if (assetId === "mf-fa3-example-01") {
+        return first.promise;
+      }
+      if (assetId === "mf-fa3-example-02") {
+        return second.promise;
+      }
+      return "<Faktura>default</Faktura>";
+    };
+
+    const user = userEvent.setup();
+    render(<module.App dependencies={dependencies} />);
+    await screen.findByText("WebMCP unavailable");
+
+    await user.click(
+      screen.getByRole("button", { name: /MF FA\(3\) Example 1MF example/u }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /MF FA\(3\) Example 2MF example/u }),
+    );
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Validate XML",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    second.resolve("<Faktura>second</Faktura>");
+    await waitFor(() =>
+      expect(screen.getByTestId("source-code").textContent).toContain("second"),
+    );
+    await act(async () => {
+      first.resolve("<Faktura>first</Faktura>");
+      await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+    });
+
+    expect(screen.getByTestId("source-code").textContent).toContain("second");
+    expect(dependencies.store.getState().selectedAssetId).toBe(
+      "mf-fa3-example-02",
+    );
   });
 });

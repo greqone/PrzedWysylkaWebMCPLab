@@ -62,8 +62,6 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
     store.getState,
     store.getState,
   );
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [webMcpStatus, setWebMcpStatus] = useState<WebMcpUiStatus>("checking");
 
@@ -83,15 +81,15 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
 
   const handleSelect = useCallback(
     async (assetId: string) => {
-      setLoadingId(assetId);
       setError(null);
+      const context = store.beginAssetSelection(assetId);
       try {
         getAsset(assetId);
-        store.selectAsset(assetId, await loadText(assetId));
+        store.completeAssetSelection(context, await loadText(assetId));
       } catch (selectionError) {
-        setError(messageOf(selectionError));
-      } finally {
-        setLoadingId(null);
+        if (store.cancelAssetSelection(context)) {
+          setError(messageOf(selectionError));
+        }
       }
     },
     [loadText, store],
@@ -103,20 +101,20 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
     const asset = getAsset(current.selectedAssetId);
     if (asset.kind !== "xml" || asset.role === "related-ubl") return;
 
-    setValidating(true);
     setError(null);
     const controller = new AbortController();
+    const validationContext = store.startValidation();
     try {
       const result = await validateCurrent(
         current.draftContent,
         `${asset.id}.xml`,
         controller.signal,
       );
-      store.recordValidation(result);
+      store.recordValidation(result, validationContext);
     } catch (validationError) {
-      setError(messageOf(validationError));
-    } finally {
-      setValidating(false);
+      if (store.cancelValidation(validationContext)) {
+        setError(messageOf(validationError));
+      }
     }
   }, [store, validateCurrent]);
 
@@ -267,7 +265,7 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
         <AssetLibrary
           assets={assets}
           selectedId={state.selectedAssetId}
-          loadingId={loadingId}
+          loadingId={state.pendingAssetSelection?.assetId ?? null}
           onSelect={(id) => void handleSelect(id)}
         />
 
@@ -275,7 +273,7 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
           asset={selectedAsset}
           content={state.draftContent}
           revision={state.revision}
-          loading={loadingId !== null}
+          loading={state.pendingAssetSelection !== null}
           onDownload={handleDownload}
         />
 
@@ -286,7 +284,8 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
           <ValidationPanel
             asset={selectedAsset}
             result={state.validation}
-            validating={validating}
+            validating={state.pendingValidation !== null}
+            selectionPending={state.pendingAssetSelection !== null}
             canStageGuidedRepair={canStageGuidedRepair}
             hasPendingProposal={state.pendingProposal !== null}
             onValidate={() => void runValidation()}

@@ -1,12 +1,21 @@
 import { describe, expect, test } from "vitest";
 
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
 type RegistryModule = {
   listAssets(filter?: {
     kind?: "xml" | "xsd";
     role?: string;
     search?: string;
   }): Array<{ id: string; kind: "xml" | "xsd"; role: string; title: string }>;
-  getAsset(id: string): { id: string; title: string };
+  getAsset(id: string): {
+    id: string;
+    title: string;
+    localPath: string;
+    sha256: string;
+    bytes: number;
+  };
   loadAssetText(
     id: string,
     options?: { fetchImpl?: typeof fetch; signal?: AbortSignal },
@@ -43,20 +52,65 @@ describe("official asset registry", () => {
     );
   });
 
-  test("loads asset text through an injected fetch implementation", async () => {
+  test("loads an asset only when response bytes match the lock", async () => {
     const registry = await loadRegistry();
     expect(registry, "asset registry module must exist").not.toBeNull();
     if (!registry) return;
 
+    const asset = registry.getAsset("mf-fa3-example-01");
+    const source = await readFile(resolve("public", asset.localPath));
+    const body = source.buffer.slice(
+      source.byteOffset,
+      source.byteOffset + source.byteLength,
+    ) as ArrayBuffer;
     const requests: string[] = [];
     const fetchImpl = (async (input: string | URL | Request) => {
       requests.push(String(input));
-      return new Response("<Faktura/>", { status: 200 });
+      return new Response(body, { status: 200 });
     }) as typeof fetch;
 
     await expect(
       registry.loadAssetText("mf-fa3-example-01", { fetchImpl }),
-    ).resolves.toBe("<Faktura/>");
+    ).resolves.toBe(new TextDecoder().decode(source));
     expect(requests[0]).toBe("/official-assets/mf/examples/fa3-example-01.xml");
+  });
+
+  test("rejects same-length content whose SHA-256 does not match the lock", async () => {
+    const registry = await loadRegistry();
+    expect(registry, "asset registry module must exist").not.toBeNull();
+    if (!registry) return;
+
+    const asset = registry.getAsset("mf-fa3-example-01");
+    const tampered = new Uint8Array(
+      await readFile(resolve("public", asset.localPath)),
+    );
+    const lastByte = tampered.length - 1;
+    tampered[lastByte] = (tampered[lastByte] ?? 0) ^ 1;
+    const fetchImpl = (async () =>
+      new Response(tampered.buffer, { status: 200 })) as typeof fetch;
+
+    await expect(
+      registry.loadAssetText("mf-fa3-example-01", { fetchImpl }),
+    ).rejects.toThrow("Asset integrity check failed for mf-fa3-example-01");
+  });
+
+  test("rejects content whose byte count does not match the lock", async () => {
+    const registry = await loadRegistry();
+    expect(registry, "asset registry module must exist").not.toBeNull();
+    if (!registry) return;
+
+    const asset = registry.getAsset("mf-fa3-example-01");
+    const source = await readFile(resolve("public", asset.localPath));
+    const truncated = source.subarray(0, source.length - 1);
+    const body = truncated.buffer.slice(
+      truncated.byteOffset,
+      truncated.byteOffset + truncated.byteLength,
+    ) as ArrayBuffer;
+    const fetchImpl = (async () =>
+      new Response(body, { status: 200 })) as typeof fetch;
+
+    await expect(
+      registry.loadAssetText("mf-fa3-example-01", { fetchImpl }),
+    ).rejects.toThrow("Asset integrity check failed for mf-fa3-example-01");
   });
 });

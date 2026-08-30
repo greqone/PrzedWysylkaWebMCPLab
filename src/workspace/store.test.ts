@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest";
 
+import type { ValidationResult } from "../validation/types";
+
 type StoreModule = {
   createWorkspaceStore(options?: {
     now?: () => string;
@@ -10,6 +12,8 @@ type StoreModule = {
       originalContent: string | null;
       draftContent: string | null;
       revision: number;
+      documentGeneration: number;
+      validation: ValidationResult | null;
       pendingProposal: null | {
         id: string;
         baseRevision: number;
@@ -18,6 +22,39 @@ type StoreModule = {
       history: Array<{ type: string }>;
     };
     selectAsset(assetId: string, content: string): void;
+    beginAssetSelection(assetId: string): {
+      assetId: string;
+      operationId: number;
+    };
+    completeAssetSelection(
+      context: { assetId: string; operationId: number },
+      content: string,
+    ): void;
+    cancelAssetSelection(context: {
+      assetId: string;
+      operationId: number;
+    }): boolean;
+    startValidation(): {
+      assetId: string;
+      revision: number;
+      documentGeneration: number;
+      operationId: number;
+    };
+    cancelValidation(context: {
+      assetId: string;
+      revision: number;
+      documentGeneration: number;
+      operationId: number;
+    }): boolean;
+    recordValidation(
+      result: ValidationResult,
+      context: {
+        assetId: string;
+        revision: number;
+        documentGeneration: number;
+        operationId: number;
+      },
+    ): void;
     stageProposal(input: {
       summary: string;
       replacements: Array<{
@@ -71,6 +108,66 @@ describe("workspace store", () => {
       "proposal-staged",
       "proposal-approved",
     ]);
+  });
+
+  test("rejects a validation result after an A to B to A selection cycle", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore();
+    store.selectAsset("asset-a", "<A/>");
+    const staleContext = store.startValidation();
+    store.selectAsset("asset-b", "<B/>");
+    store.selectAsset("asset-a", "<A/>");
+
+    expect(() =>
+      store.recordValidation(
+        { valid: true, findings: [], rawOutput: "" },
+        staleContext,
+      ),
+    ).toThrow("Validation result is stale");
+    expect(store.getState().selectedAssetId).toBe("asset-a");
+    expect(store.getState().validation).toBeNull();
+  });
+
+  test("accepts only the latest concurrent validation operation", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore();
+    store.selectAsset("asset-a", "<A/>");
+    const older = store.startValidation();
+    const newer = store.startValidation();
+
+    expect(() =>
+      store.recordValidation(
+        { valid: false, findings: [], rawOutput: "older" },
+        older,
+      ),
+    ).toThrow("Validation result is stale");
+    store.recordValidation(
+      { valid: true, findings: [], rawOutput: "newer" },
+      newer,
+    );
+    expect(store.getState().validation?.rawOutput).toBe("newer");
+  });
+
+  test("rejects an out-of-order asynchronous asset selection", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore();
+    const older = store.beginAssetSelection("asset-a");
+    const newer = store.beginAssetSelection("asset-b");
+
+    expect(() => store.completeAssetSelection(older, "<A/>")).toThrow(
+      "Asset selection is stale",
+    );
+    store.completeAssetSelection(newer, "<B/>");
+    expect(store.getState().selectedAssetId).toBe("asset-b");
   });
 
   test("refuses wrong proposal IDs and requires rejection before restaging", async () => {

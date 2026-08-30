@@ -5,6 +5,7 @@ interface ValidationPanelProps {
   asset: AssetRecord | null;
   result: ValidationResult | null;
   validating: boolean;
+  selectionPending: boolean;
   canStageGuidedRepair: boolean;
   hasPendingProposal: boolean;
   onValidate(): void;
@@ -15,6 +16,7 @@ export function ValidationPanel({
   asset,
   result,
   validating,
+  selectionPending,
   canStageGuidedRepair,
   hasPendingProposal,
   onValidate,
@@ -27,7 +29,10 @@ export function ValidationPanel({
       : "Needs attention";
   const statusClass = !result ? "neutral" : result.valid ? "success" : "danger";
   const cannotValidate =
-    !asset || asset.kind !== "xml" || asset.role === "related-ubl";
+    selectionPending ||
+    !asset ||
+    asset.kind !== "xml" ||
+    asset.role === "related-ubl";
 
   return (
     <section className="panel compact-panel" aria-labelledby="validation-title">

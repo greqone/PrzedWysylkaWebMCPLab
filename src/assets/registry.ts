@@ -86,6 +86,18 @@ export function getAsset(id: string): AssetRecord {
   return asset;
 }
 
+async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error(
+      "Web Crypto is required to verify official asset integrity",
+    );
+  }
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function loadAssetText(
   id: string,
   options: LoadAssetOptions = {},
@@ -102,5 +114,13 @@ export async function loadAssetText(
     );
   }
 
-  return response.text();
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const actualSha256 = await sha256Hex(bytes);
+  if (bytes.byteLength !== asset.bytes || actualSha256 !== asset.sha256) {
+    throw new Error(
+      `Asset integrity check failed for ${id}: expected ${asset.bytes} bytes / ${asset.sha256}, received ${bytes.byteLength} bytes / ${actualSha256}`,
+    );
+  }
+
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }

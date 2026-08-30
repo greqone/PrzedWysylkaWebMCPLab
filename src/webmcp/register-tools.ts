@@ -179,8 +179,14 @@ export async function registerWebMcpTools(
       async execute(input) {
         const { assetId } = selectInput.parse(input);
         const asset = getAsset(assetId);
-        const content = await dependencies.loadAssetText(assetId);
-        store.selectAsset(assetId, content);
+        const selectionContext = store.beginAssetSelection(assetId);
+        try {
+          const content = await dependencies.loadAssetText(assetId);
+          store.completeAssetSelection(selectionContext, content);
+        } catch (error) {
+          store.cancelAssetSelection(selectionContext);
+          throw error;
+        }
         return textToolResult({
           status: "selected",
           asset: {
@@ -203,7 +209,6 @@ export async function registerWebMcpTools(
         properties: {},
         additionalProperties: false,
       },
-      annotations: { readOnlyHint: true },
       async execute(input, { signal }) {
         emptyInput.parse(input);
         const state = store.getState();
@@ -214,12 +219,19 @@ export async function registerWebMcpTools(
         if (asset.kind !== "xml" || asset.role === "related-ubl") {
           throw new Error("The selected asset is not an FA(3) XML document");
         }
-        const result = await dependencies.validateCurrent(
-          state.draftContent,
-          `${asset.id}.xml`,
-          signal,
-        );
-        store.recordValidation(result);
+        const validationContext = store.startValidation();
+        let result: ValidationResult;
+        try {
+          result = await dependencies.validateCurrent(
+            state.draftContent,
+            `${asset.id}.xml`,
+            signal,
+          );
+          store.recordValidation(result, validationContext);
+        } catch (error) {
+          store.cancelValidation(validationContext);
+          throw error;
+        }
         return textToolResult({
           valid: result.valid,
           findingCount: result.findings.length,
@@ -258,6 +270,14 @@ export async function registerWebMcpTools(
         additionalProperties: false,
       },
       execute(input) {
+        const state = store.getState();
+        if (!state.selectedAssetId) {
+          throw new Error("Select an official FA(3) XML document first");
+        }
+        const asset = getAsset(state.selectedAssetId);
+        if (asset.kind !== "xml" || asset.role === "related-ubl") {
+          throw new Error("The selected asset is not an FA(3) XML document");
+        }
         const proposal = store.stageProposal(replacementInput.parse(input));
         return textToolResult({
           status: "pending-human-approval",

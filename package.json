@@ -2,6 +2,7 @@
   "name": "przedwysylka-webmcp-lab",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": "22.22.2"
@@ -17,7 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify:assets": "node scripts/verify-official-assets.mjs",
-    "test:e2e": "playwright test"
+    "verify:native": "node scripts/verify-native-parity.mjs",
+    "test:e2e": "playwright test",
+    "capture:demo": "npm run build && node scripts/capture-demo.mjs"
   },
   "dependencies": {
     "diff": "9.0.0",

@@ -1,6 +1,8 @@
 import { applyExactReplacements } from "./replacements";
 import type {
+  AssetSelectionContext,
   PendingProposal,
+  ValidationContext,
   WorkspaceEvent,
   WorkspaceEventType,
   WorkspaceListener,
@@ -18,6 +20,9 @@ const initialState: WorkspaceState = {
   originalContent: null,
   draftContent: null,
   revision: 0,
+  documentGeneration: 0,
+  pendingAssetSelection: null,
+  pendingValidation: null,
   pendingProposal: null,
   validation: null,
   history: [],
@@ -30,6 +35,8 @@ export function createWorkspaceStore(
   const createId = options.createId ?? (() => crypto.randomUUID());
   const listeners = new Set<WorkspaceListener>();
   let state: WorkspaceState = initialState;
+  let assetSelectionOperationId = 0;
+  let validationOperationId = 0;
 
   function emit(next: WorkspaceState): void {
     state = next;
@@ -59,6 +66,38 @@ export function createWorkspaceStore(
     return proposal;
   }
 
+  function isCurrentAssetSelection(context: AssetSelectionContext): boolean {
+    return (
+      state.pendingAssetSelection?.assetId === context.assetId &&
+      state.pendingAssetSelection.operationId === context.operationId
+    );
+  }
+
+  function isCurrentValidation(context: ValidationContext): boolean {
+    return (
+      state.pendingValidation?.operationId === context.operationId &&
+      context.assetId === state.selectedAssetId &&
+      context.revision === state.revision &&
+      context.documentGeneration === state.documentGeneration
+    );
+  }
+
+  function commitAssetSelection(assetId: string, content: string): void {
+    validationOperationId += 1;
+    emit({
+      selectedAssetId: assetId,
+      originalContent: content,
+      draftContent: content,
+      revision: 0,
+      documentGeneration: state.documentGeneration + 1,
+      pendingAssetSelection: null,
+      pendingValidation: null,
+      pendingProposal: null,
+      validation: null,
+      history: [event("asset-selected", `Selected ${assetId}`)],
+    });
+  }
+
   return {
     getState: () => state,
     subscribe(listener) {
@@ -66,23 +105,54 @@ export function createWorkspaceStore(
       return () => listeners.delete(listener);
     },
     selectAsset(assetId, content) {
-      emit({
-        selectedAssetId: assetId,
-        originalContent: content,
-        draftContent: content,
-        revision: 0,
-        pendingProposal: null,
-        validation: null,
-        history: [event("asset-selected", `Selected ${assetId}`)],
-      });
+      assetSelectionOperationId += 1;
+      commitAssetSelection(assetId, content);
     },
-    recordValidation(result) {
+    beginAssetSelection(assetId) {
+      const context = {
+        assetId,
+        operationId: ++assetSelectionOperationId,
+      };
+      emit({ ...state, pendingAssetSelection: context });
+      return context;
+    },
+    completeAssetSelection(context, content) {
+      if (!isCurrentAssetSelection(context)) {
+        throw new Error("Asset selection is stale");
+      }
+      commitAssetSelection(context.assetId, content);
+    },
+    cancelAssetSelection(context) {
+      if (!isCurrentAssetSelection(context)) return false;
+      emit({ ...state, pendingAssetSelection: null });
+      return true;
+    },
+    startValidation() {
       if (!state.selectedAssetId || state.draftContent === null) {
         throw new Error("Select an official XML asset before validation");
       }
+      if (state.pendingAssetSelection) {
+        throw new Error("Asset selection is in progress");
+      }
+      const context = {
+        assetId: state.selectedAssetId,
+        revision: state.revision,
+        documentGeneration: state.documentGeneration,
+        operationId: ++validationOperationId,
+      };
+      emit({ ...state, pendingValidation: context });
+      return context;
+    },
+    recordValidation(result, context) {
+      if (!state.selectedAssetId || state.draftContent === null) {
+        throw new Error("Select an official XML asset before validation");
+      }
+      if (!isCurrentValidation(context)) {
+        throw new Error("Validation result is stale");
+      }
       emit(
         withEvent(
-          { ...state, validation: result },
+          { ...state, pendingValidation: null, validation: result },
           event(
             "validation-completed",
             result.valid
@@ -91,6 +161,11 @@ export function createWorkspaceStore(
           ),
         ),
       );
+    },
+    cancelValidation(context) {
+      if (!isCurrentValidation(context)) return false;
+      emit({ ...state, pendingValidation: null });
+      return true;
     },
     stageProposal(input) {
       if (state.pendingProposal) {
@@ -133,6 +208,8 @@ export function createWorkspaceStore(
             ...state,
             draftContent: proposal.proposedContent,
             revision: state.revision + 1,
+            documentGeneration: state.documentGeneration + 1,
+            pendingValidation: null,
             pendingProposal: null,
             validation: null,
           },
