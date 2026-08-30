@@ -63,6 +63,8 @@ The bundled XML/XSD files are excluded from this repository's MIT license. See t
 - Validation runs in the current browser tab through `xmllint-wasm`.
 - No XML, draft, finding, or history record is sent to an application server.
 - Original assets are immutable; proposals target the current approved revision.
+- The workspace store defaults to denying replacement proposals unless the typed registry marks the selected source as eligible FA(3) XML.
+- Runtime asset paths reject traversal, encoded path segments, backslashes, queries, and fragments before fetch.
 - Latest-wins selection and validation operation tokens reject out-of-order or stale asynchronous completions.
 - Stale, ambiguous, duplicate, missing, or overlapping replacements fail atomically.
 - XML is rendered as escaped text, never injected as HTML.

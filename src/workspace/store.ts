@@ -13,6 +13,7 @@ import type {
 export interface WorkspaceStoreOptions {
   now?: () => string;
   createId?: () => string;
+  canStageReplacements?: (assetId: string) => boolean;
 }
 
 const initialState: WorkspaceState = {
@@ -33,6 +34,7 @@ export function createWorkspaceStore(
 ): WorkspaceStore {
   const now = options.now ?? (() => new Date().toISOString());
   const createId = options.createId ?? (() => crypto.randomUUID());
+  const canStageReplacements = options.canStageReplacements ?? (() => false);
   const listeners = new Set<WorkspaceListener>();
   let state: WorkspaceState = initialState;
   let assetSelectionOperationId = 0;
@@ -173,6 +175,12 @@ export function createWorkspaceStore(
       }
       if (state.draftContent === null) {
         throw new Error("Select an official XML asset before staging changes");
+      }
+      if (
+        !state.selectedAssetId ||
+        !canStageReplacements(state.selectedAssetId)
+      ) {
+        throw new Error("Selected asset does not allow replacement proposals");
       }
       if (!input.summary.trim())
         throw new Error("Proposal summary is required");

@@ -176,6 +176,7 @@ export async function registerWebMcpTools(
         required: ["assetId"],
         additionalProperties: false,
       },
+      annotations: { readOnlyHint: false },
       async execute(input) {
         const { assetId } = selectInput.parse(input);
         const asset = getAsset(assetId);
@@ -209,6 +210,7 @@ export async function registerWebMcpTools(
         properties: {},
         additionalProperties: false,
       },
+      annotations: { readOnlyHint: false, untrustedContentHint: true },
       async execute(input, { signal }) {
         emptyInput.parse(input);
         const state = store.getState();
@@ -269,6 +271,7 @@ export async function registerWebMcpTools(
         required: ["summary", "replacements"],
         additionalProperties: false,
       },
+      annotations: { readOnlyHint: false },
       execute(input) {
         const state = store.getState();
         if (!state.selectedAssetId) {

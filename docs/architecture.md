@@ -22,7 +22,7 @@ flowchart LR
 
 ### Asset registry
 
-`src/assets/registry.ts` parses the checked manifest through Zod and offers three operations: list, resolve by stable ID, and load text. The build gate independently hashes files through `scripts/asset-verifier.mjs`.
+`src/assets/registry.ts` parses the checked manifest through Zod and offers three operations: list, resolve by stable ID, and load text. Runtime paths must be canonical relative paths composed of safe segments under `official-assets/`; dot segments, encoded traversal, backslashes, query strings, and fragments are rejected again immediately before fetch. The build gate independently hashes files through `scripts/asset-verifier.mjs`.
 
 The runtime never discovers schemas from document-supplied locations. Four canonical CRD IDs are frozen in the manifest.
 
@@ -51,11 +51,11 @@ Invalid documents resolve to `valid: false`. Schema/runtime failures reject. The
 - at most one pending proposal;
 - visible audit events.
 
-A proposal is computed atomically against a base revision. Searches must be non-empty, appear exactly once, and not overlap. Approval checks both proposal ID and base revision before mutating the approved draft.
+A proposal is computed atomically against a base revision. Searches must be non-empty, appear exactly once, and not overlap. The store defaults to denying proposals and requires a registry-backed policy to mark the selected asset as an FA(3) XML document; caller-only XSD/UBL checks are defense in depth. Approval checks both proposal ID and base revision before mutating the approved draft.
 
 ### WebMCP bridge
 
-`src/webmcp/register-tools.ts` registers exactly six tools using `document.modelContext.registerTool()`. One `AbortController` owns their lifecycle.
+`src/webmcp/register-tools.ts` registers exactly six tools using `document.modelContext.registerTool()`. Read-only and state-changing tools declare `readOnlyHint` explicitly; validation diagnostics are marked untrusted. One `AbortController` owns their lifecycle, and aborting it unregisters every successful partial registration through the WebMCP signal contract if any registration fails.
 
 The bridge deliberately omits approval, rejection, download, arbitrary file upload, network access, and KSeF submission. The agent can stage work; only the human UI can cross the approval boundary.
 
@@ -83,6 +83,8 @@ The UI consumes the same store and domain functions as WebMCP callbacks. There i
 | Stale/concurrent validation       | Document generation plus latest operation token reject older results            |
 | Schema substitution               | Canonical schema IDs and all source hashes are locked                           |
 | Runtime asset substitution        | Every fetched body must match locked SHA-256 and exact byte count before decode |
+| Runtime asset path traversal      | Strict path-segment validation runs at manifest parse and immediately pre-fetch |
+| Caller bypasses mutation policy   | Store defaults deny and consults the typed-registry eligibility resolver        |
 | Line-ending corruption            | Official assets use Git `-text -diff`; fresh-clone hash verification is tested  |
 | Browser without WebMCP            | Honest unsupported status; human UI remains functional                          |
 | XML-as-HTML injection             | Source is rendered as React text nodes inside `<pre>`                           |

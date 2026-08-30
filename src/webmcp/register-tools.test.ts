@@ -23,7 +23,9 @@ type WebMcpModule = {
 };
 
 type StoreModule = {
-  createWorkspaceStore(): {
+  createWorkspaceStore(options?: {
+    canStageReplacements?: (assetId: string) => boolean;
+  }): {
     getState(): {
       draftContent: string | null;
       pendingProposal: null | { proposedContent: string };
@@ -96,12 +98,66 @@ describe("WebMCP registration", () => {
     expect(
       registered.find(({ tool }) => tool.name === "validate_workspace")?.tool
         .annotations?.readOnlyHint,
-    ).not.toBe(true);
+    ).toBe(false);
+    for (const toolName of [
+      "select_official_asset",
+      "stage_exact_replacements",
+    ]) {
+      expect(
+        registered.find(({ tool }) => tool.name === toolName)?.tool.annotations
+          ?.readOnlyHint,
+        toolName,
+      ).toBe(false);
+    }
+    expect(
+      registered.find(({ tool }) => tool.name === "validate_workspace")?.tool
+        .annotations?.untrustedContentHint,
+    ).toBe(true);
 
     registration.controller?.abort();
     expect(
       registered.every(({ options }) => options?.signal?.aborted === true),
     ).toBe(true);
+  });
+
+  test("aborts every registration signal after a partial registration failure", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const registrations: Registered[] = [];
+    const unregistered = new Set<string>();
+    await expect(
+      modules.webmcp.registerWebMcpTools(modules.store.createWorkspaceStore(), {
+        modelContext: {
+          async registerTool(tool, options) {
+            registrations.push({ tool, ...(options ? { options } : {}) });
+            options?.signal?.addEventListener(
+              "abort",
+              () => unregistered.add(tool.name),
+              { once: true },
+            );
+            if (tool.name === "validate_workspace") {
+              throw new Error("registration failed");
+            }
+          },
+        },
+        loadAssetText: async () => "",
+        validateCurrent: async () => ({
+          valid: true,
+          findings: [],
+          rawOutput: "",
+        }),
+      }),
+    ).rejects.toThrow("registration failed");
+
+    expect(registrations).toHaveLength(6);
+    expect(
+      registrations.every(({ options }) => options?.signal?.aborted === true),
+    ).toBe(true);
+    expect([...unregistered].sort()).toEqual(
+      registrations.map(({ tool }) => tool.name).sort(),
+    );
   });
 
   test("stages agent replacements without changing the approved draft", async () => {
@@ -115,7 +171,9 @@ describe("WebMCP registration", () => {
         tools.set(tool.name, tool);
       },
     };
-    const store = modules.store.createWorkspaceStore();
+    const store = modules.store.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
     await modules.webmcp.registerWebMcpTools(store, {
       modelContext,
       loadAssetText: async () => "<NIP>#nip#</NIP>",

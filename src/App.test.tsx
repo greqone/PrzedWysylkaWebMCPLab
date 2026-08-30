@@ -41,6 +41,7 @@ function createDependencies(): AppDependencies {
   const store = createWorkspaceStore({
     now: () => "2026-08-30T18:00:00.000Z",
     createId: () => `ui-event-${++id}`,
+    canStageReplacements: (assetId) => assetId === "cirfmf-template-base",
   });
   return {
     store,

@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 type RegistryModule = {
+  isSafeOfficialAssetPath(value: string): boolean;
   listAssets(filter?: {
     kind?: "xml" | "xsd";
     role?: string;
@@ -29,6 +30,30 @@ async function loadRegistry(): Promise<RegistryModule | null> {
 }
 
 describe("official asset registry", () => {
+  test("accepts only canonical relative paths under official-assets", async () => {
+    const registry = await loadRegistry();
+    expect(registry, "asset registry module must exist").not.toBeNull();
+    if (!registry) return;
+
+    expect(
+      registry.isSafeOfficialAssetPath(
+        "official-assets/mf/examples/fa3-example-01.xml",
+      ),
+    ).toBe(true);
+    for (const unsafe of [
+      "official-assets/../private-file",
+      "official-assets/./fixture.xml",
+      "official-assets//fixture.xml",
+      "official-assets/%2e%2e/private-file",
+      "official-assets\\..\\private-file",
+      "official-assets/fixture.xml?raw=1",
+      "official-assets/fixture.xml#fragment",
+      "/official-assets/fixture.xml",
+    ]) {
+      expect(registry.isSafeOfficialAssetPath(unsafe), unsafe).toBe(false);
+    }
+  });
+
   test("filters the complete corpus without mutating manifest order", async () => {
     const registry = await loadRegistry();
     expect(registry, "asset registry module must exist").not.toBeNull();

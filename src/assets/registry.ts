@@ -8,6 +8,26 @@ import type {
   LoadAssetOptions,
 } from "./types";
 
+export function isSafeOfficialAssetPath(value: string): boolean {
+  if (!value.startsWith("official-assets/")) return false;
+  if (/[\\%?#]/u.test(value)) return false;
+
+  const segments = value.split("/");
+  return (
+    segments[0] === "official-assets" &&
+    segments.length > 1 &&
+    segments
+      .slice(1)
+      .every(
+        (segment) =>
+          segment.length > 0 &&
+          segment !== "." &&
+          segment !== ".." &&
+          /^[A-Za-z0-9._-]+$/u.test(segment),
+      )
+  );
+}
+
 const assetRecordSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(["xml", "xsd"]),
@@ -20,7 +40,9 @@ const assetRecordSchema = z.object({
     "cirfmf-xsd-source",
   ]),
   title: z.string().min(1),
-  localPath: z.string().startsWith("official-assets/"),
+  localPath: z
+    .string()
+    .refine(isSafeOfficialAssetPath, "Unsafe official asset localPath"),
   sourceUrl: z.url(),
   sourcePath: z.string().min(1),
   sourceRevision: z.string().min(1).optional(),
@@ -86,6 +108,11 @@ export function getAsset(id: string): AssetRecord {
   return asset;
 }
 
+export function canStageOfficialAssetReplacements(id: string): boolean {
+  const asset = getAsset(id);
+  return asset.kind === "xml" && asset.role !== "related-ubl";
+}
+
 async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   if (!globalThis.crypto?.subtle) {
     throw new Error(
@@ -103,6 +130,9 @@ export async function loadAssetText(
   options: LoadAssetOptions = {},
 ): Promise<string> {
   const asset = getAsset(id);
+  if (!isSafeOfficialAssetPath(asset.localPath)) {
+    throw new Error(`Unsafe official asset path: ${asset.localPath}`);
+  }
   const fetchImpl = options.fetchImpl ?? fetch;
   const response = await fetchImpl(`/${asset.localPath}`, {
     ...(options.signal ? { signal: options.signal } : {}),

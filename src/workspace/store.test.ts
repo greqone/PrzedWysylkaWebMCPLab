@@ -6,6 +6,7 @@ type StoreModule = {
   createWorkspaceStore(options?: {
     now?: () => string;
     createId?: () => string;
+    canStageReplacements?: (assetId: string) => boolean;
   }): {
     getState(): {
       selectedAssetId: string | null;
@@ -82,6 +83,7 @@ describe("workspace store", () => {
     const store = module.createWorkspaceStore({
       now: () => "2026-08-30T18:00:00.000Z",
       createId: () => `event-${++id}`,
+      canStageReplacements: () => true,
     });
     store.selectAsset("cirfmf-template-base", "<NIP>#nip#</NIP>");
     const proposal = store.stageProposal({
@@ -108,6 +110,27 @@ describe("workspace store", () => {
       "proposal-staged",
       "proposal-approved",
     ]);
+  });
+
+  test("fails closed when the selected asset is not mutation-eligible", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: (assetId) => assetId === "mutable-fa3",
+    });
+    store.selectAsset("crd-fa3-schema", "<schema>#value#</schema>");
+
+    expect(() =>
+      store.stageProposal({
+        summary: "Attempt schema mutation",
+        replacements: [
+          { search: "#value#", replacement: "changed", reason: "Attempt" },
+        ],
+      }),
+    ).toThrow("Selected asset does not allow replacement proposals");
+    expect(store.getState().pendingProposal).toBeNull();
   });
 
   test("rejects a validation result after an A to B to A selection cycle", async () => {
@@ -175,7 +198,9 @@ describe("workspace store", () => {
     expect(module, "workspace store module must exist").not.toBeNull();
     if (!module) return;
 
-    const store = module.createWorkspaceStore();
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
     store.selectAsset("fixture", "#value#");
     const proposal = store.stageProposal({
       summary: "First",

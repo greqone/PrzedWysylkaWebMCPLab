@@ -7,7 +7,12 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import { getAsset, listAssets, loadAssetText } from "./assets/registry";
+import {
+  canStageOfficialAssetReplacements,
+  getAsset,
+  listAssets,
+  loadAssetText,
+} from "./assets/registry";
 import type { AssetRecord } from "./assets/types";
 import { AgentGuide } from "./components/AgentGuide";
 import { AppHeader } from "./components/AppHeader";
@@ -49,7 +54,11 @@ function messageOf(error: unknown): string {
 }
 
 export function App({ dependencies }: { dependencies?: AppDependencies }) {
-  const [ownedStore] = useState(() => createWorkspaceStore());
+  const [ownedStore] = useState(() =>
+    createWorkspaceStore({
+      canStageReplacements: canStageOfficialAssetReplacements,
+    }),
+  );
   const store = dependencies?.store ?? ownedStore;
   const loadText = dependencies?.loadAssetText ?? loadAssetText;
   const schemaBundle = useRef<ReturnType<
