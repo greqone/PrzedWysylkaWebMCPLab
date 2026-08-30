@@ -6,7 +6,7 @@
 
 **Architecture:** A static Vite/React SPA loads a hash-locked first-party corpus, validates XML in-browser with `xmllint-wasm`, stores immutable originals plus approved/pending revisions, and exposes the same state through `document.modelContext.registerTool()`. Agent changes are proposals; only UI actions approve or reject them.
 
-**Tech Stack:** Node 22.22.2; Vite 8.2.2; React 19.2.8; TypeScript 7.0.2; xmllint-wasm 5.3.0; webmcp-types 0.1.5; Zod 4.5.4; Vitest 4.1.11; Playwright 1.62.1.
+**Tech Stack:** Node 22.22.2; Vite 8.2.2; React 19.2.8; TypeScript 6.0.3; xmllint-wasm 5.3.0; webmcp-types 0.1.5; Zod 4.5.4; Vitest 4.1.11; Playwright 1.62.1.
 
 ## Global Constraints
 
@@ -22,12 +22,14 @@
 ### Task 1: Reproducible scaffold and official corpus
 
 **Files:**
+
 - Create: `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`, `index.html`, `.gitignore`, `.nvmrc`
 - Create: `data/official-assets.lock.json`, `scripts/verify-official-assets.mjs`
 - Create: `public/official-assets/**`, `src/assets/types.ts`, `src/assets/registry.ts`
 - Test: `src/assets/registry.test.ts`, `tests/assets-lock.test.ts`
 
 **Interfaces:**
+
 - Produces `AssetRecord`, `AssetManifest`, `listAssets(filter)`, `getAsset(id)`, and `loadAssetText(id, signal?)`.
 
 - [ ] Copy every frozen first-party asset under stable ASCII paths and generate the lock with source URL/path, role, expected validation class, SHA-256, and bytes.
@@ -38,10 +40,12 @@
 ### Task 2: Browser-local validator and normalized findings
 
 **Files:**
+
 - Create: `src/validation/types.ts`, `src/validation/validator.ts`, `src/validation/normalize.ts`
 - Test: `src/validation/normalize.test.ts`, `tests/corpus-validation.test.ts`
 
 **Interfaces:**
+
 - Consumes `loadAssetText()` and canonical schema IDs.
 - Produces `validateXml(xml, fileName, signal?): Promise<ValidationResult>` where transport/schema failures throw and invalid documents resolve with `valid: false` plus findings.
 
@@ -53,11 +57,13 @@
 ### Task 3: Workspace state and six WebMCP tools
 
 **Files:**
+
 - Create: `src/workspace/types.ts`, `src/workspace/store.ts`, `src/workspace/replacements.ts`
 - Create: `src/webmcp/tool-result.ts`, `src/webmcp/register-tools.ts`
 - Test: `src/workspace/store.test.ts`, `src/workspace/replacements.test.ts`, `src/webmcp/register-tools.test.ts`
 
 **Interfaces:**
+
 - Produces `createWorkspaceStore()`, `WorkspaceStore.subscribe/getState`, `stageProposal`, `approveProposal`, `rejectProposal`, and `registerWebMcpTools(store): AbortController`.
 
 - [ ] Write failing tests for atomic exact replacement, duplicate/overlap rejection, stale-base approval refusal, and immutable originals.
@@ -68,11 +74,13 @@
 ### Task 4: Complete React workbench
 
 **Files:**
+
 - Create: `src/main.tsx`, `src/App.tsx`, `src/styles.css`
 - Create: `src/components/AppHeader.tsx`, `AssetLibrary.tsx`, `SourceViewer.tsx`, `ValidationPanel.tsx`, `ProposalPanel.tsx`, `HistoryPanel.tsx`, `ProvenanceDrawer.tsx`, `WebMcpStatus.tsx`
 - Test: `src/App.test.tsx`
 
 **Interfaces:**
+
 - Consumes the registry, validator, workspace store, and WebMCP bridge without duplicating domain logic.
 
 - [ ] Write a failing interaction test for select → validate → stage → approve/reject.
@@ -83,11 +91,13 @@
 ### Task 5: End-to-end proof and submission package
 
 **Files:**
+
 - Create: `playwright.config.ts`, `tests/e2e/workbench.spec.ts`, `tests/e2e/webmcp-harness.ts`
 - Create: `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/architecture.md`, `docs/submission.md`, `docs/demo-script.md`
 - Create: `.github/workflows/ci.yml`, `netlify.toml`
 
 **Interfaces:**
+
 - Produces a static `dist/` artifact and reproducible judge instructions.
 
 - [ ] Inject a standards-shaped `document.modelContext` harness before page load and execute the real registered tools through it.
