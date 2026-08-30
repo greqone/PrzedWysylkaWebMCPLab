@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 
 const root = resolve(import.meta.dirname, "..");
 const manifestPath = resolve(root, "data/official-assets.lock.json");
+const attributesPath = resolve(root, ".gitattributes");
 
 type LockedAsset = {
   id: string;
@@ -38,6 +39,12 @@ describe("official asset lock", () => {
     expect(new Set(manifest.assets.map((asset) => asset.id)).size).toBe(
       manifest.assets.length,
     );
+  });
+
+  test("pins official asset bytes as binary in Git", () => {
+    expect(existsSync(attributesPath), ".gitattributes must exist").toBe(true);
+    const attributes = readFileSync(attributesPath, "utf8");
+    expect(attributes).toContain("public/official-assets/** -text");
   });
 
   test("locks every asset to an existing local file and SHA-256", () => {
