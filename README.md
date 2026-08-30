@@ -4,6 +4,8 @@
 
 ![PrzedWysylka WebMCP Lab showing an invalid official template and a pending human approval](docs/assets/workbench.png)
 
+**Evidence scope:** the committed screenshot and automated E2E run real Chromium with a standards-shaped injected WebMCP harness. They prove the app's registration, callback, shared-state, validation, and human-gate behavior; they do not claim to test a browser vendor's native agent implementation.
+
 ## Why this exists
 
 Structured tax XML is an unusually good WebMCP problem. A visual browser agent can click through an editor, but it should not have to guess which schema is authoritative, scrape line numbers, or silently rewrite a compliance document. The page already owns that context.
@@ -99,8 +101,10 @@ npm test                # unit, contract, corpus, and React interaction tests
 npm run typecheck
 npm run lint
 npm run build           # production bundle, browser worker, and WASM
-npm run test:e2e        # real Chromium + WebMCP harness + Axe
+npm run test:e2e        # real Chromium + standards-shaped injected WebMCP harness + Axe
 ```
+
+The automated browser tests do not prove browser-native WebMCP API, permission-policy enforcement, or native-agent compatibility. Before submission, run the final smoke and recording in the actual target environment—ChatGPT Desktop's in-app browser or WebMCP-enabled Chrome—without injecting the test harness.
 
 Optional independent native validity-class gate:
 
@@ -110,7 +114,7 @@ npm run verify:native
 
 It independently confirms that system `xmllint` accepts all 26 Ministry examples and rejects all three raw CIRFMF templates. It compares validity classes, not diagnostic text or line-number identity. Set `XMLLINT_BIN` if `xmllint` is not on `PATH`.
 
-To regenerate the committed product screenshot from a fresh local production build and execute the registered WebMCP select → validate → stage flow:
+To regenerate the committed product screenshot from a fresh local production build and execute the registered select → validate → stage callbacks through the injected capture harness:
 
 ```bash
 npm run capture:demo

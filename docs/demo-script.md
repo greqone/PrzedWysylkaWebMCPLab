@@ -78,6 +78,8 @@ Wait for `Schema valid`.
 - Keep the recording under 3:00; target 2:35.
 - Use only the bundled official fixtures; show no personal/customer XML.
 - Show the WebMCP connected state.
+- Confirm the connected state comes from the target browser's native `document.modelContext` implementation.
+- Do not inject the automated WebMCP harness into the final recording; this recording is the manual native-browser smoke.
 - Do not cut between staging and approval; the human click must be visible.
 - Ensure narration is English and no copyrighted music plays.
 - Review the final video for personal information, notifications, bookmarks, and unrelated trademarks before publishing.

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 import { executeWebMcpTool, installWebMcpHarness } from "./webmcp-harness";
 
-test("agent stages a repair and only the human approves it", async ({
+test("WebMCP harness stages a repair and only the human approves it", async ({
   page,
 }) => {
   const runtimeErrors: string[] = [];

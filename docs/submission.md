@@ -79,9 +79,11 @@ The automated suite proves:
 - browser-WASM corpus validation plus an independent native `xmllint` validity-class check;
 - atomic/stale-safe proposal behavior;
 - exactly six registered WebMCP tools and no approval tool;
-- real Chromium agent → validation → stage → human approval → valid revision flow;
+- real Chromium with a standards-shaped injected WebMCP harness: registration → validation → stage → human approval → valid revision;
 - no page/console errors and no serious/critical Axe violations in that flow;
 - ordinary-browser fallback remains usable.
+
+This automated evidence proves the application's registration and callback contract, but it does not prove browser-native WebMCP API, permission, or agent compatibility. A manual smoke in the actual target environment, without the injected harness, is required before the final submission and recording.
 
 ## Challenge criteria
 

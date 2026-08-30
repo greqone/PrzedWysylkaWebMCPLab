@@ -24,4 +24,25 @@ describe("evidence wording", () => {
       expect(content, relativePath).not.toMatch(/\bparity\b/iu);
     }
   });
+
+  test("does not present the injected WebMCP harness as native-agent evidence", () => {
+    const readme = readFileSync(resolve(root, "README.md"), "utf8");
+    const submission = readFileSync(
+      resolve(root, "docs/submission.md"),
+      "utf8",
+    );
+    const demoScript = readFileSync(
+      resolve(root, "docs/demo-script.md"),
+      "utf8",
+    );
+
+    expect(readme).toContain("standards-shaped injected WebMCP harness");
+    expect(submission).not.toMatch(/real Chromium agent/iu);
+    expect(submission).toContain(
+      "does not prove browser-native WebMCP API, permission, or agent compatibility",
+    );
+    expect(demoScript).toContain(
+      "Do not inject the automated WebMCP harness into the final recording",
+    );
+  });
 });

@@ -144,7 +144,9 @@ try {
   if (errors.length) {
     throw new Error(`Browser runtime errors:\n${errors.join("\n")}`);
   }
-  console.log(`Demo screenshot written to ${output}`);
+  console.log(
+    `Demo screenshot written to ${output} using the injected six-tool WebMCP harness`,
+  );
 } finally {
   await browser.close();
   if (server && server.exitCode === null) {
