@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "verify:assets": "node scripts/verify-official-assets.mjs",
     "verify:native": "node scripts/verify-native-validity.mjs",
+    "verify:upstreams": "python scripts/verify-upstream-sources.py --write-report",
     "test:e2e": "playwright test",
     "capture:demo": "npm run build && node scripts/capture-demo.mjs"
   },
@@ -45,6 +46,7 @@
     "globals": "17.11.0",
     "jsdom": "30.0.1",
     "prettier": "3.9.6",
+    "saxes": "6.0.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.68.0",
     "vite": "8.2.2",

@@ -3,10 +3,12 @@ export type AssetKind = "xml" | "xsd";
 export type AssetRole =
   | "mf-valid-example"
   | "cirfmf-fa3-template"
+  | "cirfmf-fa3-example"
   | "related-ubl"
   | "canonical-xsd-root"
   | "canonical-xsd-dependency"
-  | "cirfmf-xsd-source";
+  | "cirfmf-xsd-source"
+  | "cirfmf-api-xsd-source";
 
 export type ExpectedValidation =
   "valid" | "invalid-template" | "not-applicable" | "schema";
@@ -39,9 +41,11 @@ export interface AssetManifest {
     assets: number;
     mfValidExamples: number;
     cirfmfFa3Templates: number;
+    cirfmfFa3Examples: number;
     relatedUbl: number;
     canonicalXsd: number;
     cirfmfXsdSources: number;
+    cirfmfApiXsdSources: number;
   };
   assets: AssetRecord[];
 }

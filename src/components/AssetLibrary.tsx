@@ -12,10 +12,12 @@ interface AssetLibraryProps {
 const roleLabels: Record<string, string> = {
   "mf-valid-example": "MF example",
   "cirfmf-fa3-template": "CIRFMF template",
+  "cirfmf-fa3-example": "CIRFMF example",
   "related-ubl": "Related UBL",
   "canonical-xsd-root": "CRD root",
   "canonical-xsd-dependency": "CRD dependency",
   "cirfmf-xsd-source": "CIRFMF XSD",
+  "cirfmf-api-xsd-source": "CIRFMF API XSD",
 };
 
 function formatBytes(bytes: number): string {

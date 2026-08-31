@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Include all 26 MF example XMLs, three CIRFMF FA(3) templates, one separately labelled UBL fixture, four canonical CRD XSDs, and two CIRFMF XSD source records.
+- Include all 26 MF example XMLs; every FA(3)-namespace XML path from the pinned CIRFMF C#, Java, and PDF-generator snapshots; one separately labelled UBL fixture; four canonical CRD XSDs; two C# comparison XSD records; and every FA(3) XSD path from the pinned CIRFMF API snapshot. The resulting frozen scope is 55 source records.
 - Canonical validation uses only the four-file CRD closure.
 - Preserve source bytes and verify SHA-256 before build.
 - No private PrzedWysylka code, backend, upload, KSeF API, analytics, secrets, or agent-callable approval.
@@ -51,7 +51,7 @@
 
 - [ ] Write failing normalization and corpus contract tests.
 - [ ] Wrap `xmllint-wasm` 5.3.0 using the CRD root as `schema[0]` and the three dependencies as `preload` records.
-- [ ] Prove all 26 MF examples valid and classify each CIRFMF template by expected-invalid reason.
+- [ ] Prove all 26 MF examples valid and classify all 18 CIRFMF FA(3) source records from their declared `expectedValidation` contract.
 - [ ] Run focused tests and commit validator code separately.
 
 ### Task 3: Workspace state and six WebMCP tools

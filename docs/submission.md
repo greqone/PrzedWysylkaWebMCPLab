@@ -18,7 +18,7 @@ No URL is fabricated in this draft. The code, production build, E2E evidence, sc
 
 ## What it does
 
-PrzedWysylka WebMCP Lab is a browser-local workbench for Poland's official FA(3) structured invoice XML. A human and a browser agent share one visible workspace containing the complete frozen official corpus: 26 Ministry example XMLs, three CIRFMF FA(3) templates, one adjacent UBL fixture, the full four-file canonical CRD XSD closure, and two CIRFMF schema source records.
+PrzedWysylka WebMCP Lab is a browser-local workbench for Poland's official FA(3) structured invoice XML. A human and a browser agent share one visible workspace containing the complete frozen first-party scope: 26 Ministry examples, all 18 FA(3)-namespace XML source records from pinned CIRFMF C#, Java, and PDF-generator snapshots, one explicitly adjacent UBL fixture, the four-file canonical CRD closure, two C# schema records, and all four FA(3) XSD source records from the pinned CIRFMF API repository. Exact duplicates retain separate provenance and byte-identity links.
 
 The agent does not scrape the UI. Six WebMCP tools let it list assets, read bounded source ranges, select a file, run canonical XSD validation, stage exact replacements, and inspect revision/hash/history state. A staged proposal appears immediately as a human-readable diff.
 
@@ -34,7 +34,7 @@ WebMCP lets the page expose exactly the capabilities it already owns while prese
 
 Before WebMCP, an agent would need to inspect DOM text, guess which schema is active, click through controls, and type directly into a document editor. With WebMCP it can:
 
-1. discover all 36 first-party records;
+1. discover all 55 first-party records;
 2. select the official parameterized template;
 3. run the canonical validator;
 4. read only the relevant lines;
@@ -54,7 +54,7 @@ All tool callbacks reuse the same asset registry, validator, replacement engine,
 - Static site; no application backend.
 - Validation runs through libxml2 compiled to WebAssembly.
 - No uploads, accounts, cookies, analytics, or KSeF API calls.
-- All 36 official records are SHA-256 locked.
+- All 55 official records are SHA-256 and byte-count locked.
 - Original sources remain immutable.
 - Exact replacements must be unique and non-overlapping.
 - Approval is human-only and stale proposals fail closed.
@@ -73,9 +73,10 @@ All tool callbacks reuse the same asset registry, validator, replacement engine,
 
 The automated suite proves:
 
-- complete 36-record manifest and byte hashes;
+- complete 55-record source inventory, byte hashes, and duplicate graph;
+- live upstream replay of all 55 records across 30 corpus HTTP resources plus four pinned CIRFMF license resources—34 total HTTP resources—with bounded streaming, globally routable DNS-only pinned connections, peer-IP revalidation, and manifest/scope-bound evidence;
 - all 26 Ministry examples pass canonical FA(3) validation;
-- all three raw CIRFMF FA(3) templates are expected-invalid;
+- all 18 CIRFMF FA(3) source records match their declared classes: two expected-valid and 16 expected-invalid;
 - browser-WASM corpus validation plus an independent native `xmllint` validity-class check;
 - atomic/stale-safe proposal behavior;
 - exactly six registered WebMCP tools and no approval tool;

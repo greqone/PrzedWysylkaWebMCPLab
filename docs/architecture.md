@@ -8,7 +8,7 @@ Provide one shared, visible browser workspace in which a human and an agent can 
 
 ```mermaid
 flowchart LR
-  A[36 hash-locked official assets] --> R[Typed asset registry]
+  A[55 hash-locked official assets] --> R[Typed asset registry]
   R --> U[React workbench]
   R --> S[Canonical CRD schema bundle]
   S --> V[xmllint-wasm worker]
@@ -22,7 +22,11 @@ flowchart LR
 
 ### Asset registry
 
-`src/assets/registry.ts` parses the checked manifest through Zod and offers three operations: list, resolve by stable ID, and load text. Runtime paths must be canonical relative paths composed of safe segments under `official-assets/`; dot segments, encoded traversal, backslashes, query strings, and fragments are rejected again immediately before fetch. The build gate independently hashes files through `scripts/asset-verifier.mjs`.
+`src/assets/registry.ts` parses the checked manifest through Zod and offers three operations: list, resolve by stable ID, and load text. Runtime paths must be canonical relative paths composed of safe segments under `official-assets/`; dot segments, encoded traversal, backslashes, query strings, and fragments are rejected again immediately before fetch. The build gate independently hashes all 55 source records through `scripts/asset-verifier.mjs` and rejects missing, self-referential, chained, or byte-mismatched `contentDuplicateOf` declarations.
+
+Corpus completeness is frozen to exact upstream commits and source-path inventories. It includes all 26 Ministry examples, every FA(3)-namespace XML path in the pinned CIRFMF C#, Java, and PDF-generator snapshots, the canonical four-file CRD closure, and every FA(3) XSD path in the pinned CIRFMF API snapshot. Adjacent FA(2), FA_RR, UPO, authentication, and PEF/UBL contracts are not represented as FA(3).
+
+`data/official-source-scope.json` closes that universe at the observation date, including zero-match CIRFMF repositories and explicit exclusions. The optional networked `verify:upstreams` gate replays the Ministry ZIP members and every direct CRD/CIRFMF URL, then writes a deterministic report bound to both manifest and scope hashes. Offline builds consume only the vendored, verified bytes.
 
 The runtime never discovers schemas from document-supplied locations. Four canonical CRD IDs are frozen in the manifest.
 

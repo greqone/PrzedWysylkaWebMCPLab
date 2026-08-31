@@ -32,11 +32,13 @@ describe("official asset lock", () => {
     );
 
     expect(byRole["mf-valid-example"]).toHaveLength(26);
-    expect(byRole["cirfmf-fa3-template"]).toHaveLength(3);
+    expect(byRole["cirfmf-fa3-template"]).toHaveLength(16);
+    expect(byRole["cirfmf-fa3-example"]).toHaveLength(2);
     expect(byRole["related-ubl"]).toHaveLength(1);
     expect(byRole["canonical-xsd-root"]).toHaveLength(1);
     expect(byRole["canonical-xsd-dependency"]).toHaveLength(3);
     expect(byRole["cirfmf-xsd-source"]).toHaveLength(2);
+    expect(byRole["cirfmf-api-xsd-source"]).toHaveLength(4);
     expect(new Set(manifest.assets.map((asset) => asset.id)).size).toBe(
       manifest.assets.length,
     );

@@ -34,10 +34,12 @@ const assetRecordSchema = z.object({
   role: z.enum([
     "mf-valid-example",
     "cirfmf-fa3-template",
+    "cirfmf-fa3-example",
     "related-ubl",
     "canonical-xsd-root",
     "canonical-xsd-dependency",
     "cirfmf-xsd-source",
+    "cirfmf-api-xsd-source",
   ]),
   title: z.string().min(1),
   localPath: z
@@ -67,14 +69,16 @@ const manifestSchema = z.object({
     dependencyIds: z.array(z.string().min(1)).length(3),
   }),
   expectedCounts: z.object({
-    assets: z.literal(36),
+    assets: z.literal(55),
     mfValidExamples: z.literal(26),
-    cirfmfFa3Templates: z.literal(3),
+    cirfmfFa3Templates: z.literal(16),
+    cirfmfFa3Examples: z.literal(2),
     relatedUbl: z.literal(1),
     canonicalXsd: z.literal(4),
     cirfmfXsdSources: z.literal(2),
+    cirfmfApiXsdSources: z.literal(4),
   }),
-  assets: z.array(assetRecordSchema).length(36),
+  assets: z.array(assetRecordSchema).length(55),
 });
 
 export const assetManifest = manifestSchema.parse(rawManifest) as AssetManifest;

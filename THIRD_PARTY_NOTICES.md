@@ -2,7 +2,7 @@
 
 The project MIT license covers original source code in this repository. It does not relicense official XML/XSD source material or third-party packages.
 
-An additional license-boundary notice is stored directly beside the bundled files at [`public/official-assets/NOTICE.md`](public/official-assets/NOTICE.md). It remains part of every static build but is not one of the 36 locked XML/XSD source records.
+An additional license-boundary notice is stored directly beside the bundled files at [`public/official-assets/NOTICE.md`](public/official-assets/NOTICE.md). It remains part of every static build but is not one of the 55 locked XML/XSD source records.
 
 ## Ministry of Finance / Krajowy System e-Faktur
 
@@ -24,16 +24,29 @@ The canonical FA(3) schema and its complete transitive dependency closure come f
 
 The four canonical XSD files are preserved unmodified under `public/official-assets/crd/`. Runtime-only resolver aliases are generated in memory; official source bytes are never rewritten.
 
-## CIRFMF KSeF C# client
+## CIRFMF first-party repositories
 
-Templates and comparison schemas are pinned to:
+The frozen corpus includes source records from these exact revisions:
 
-- Repository: https://github.com/CIRFMF/ksef-client-csharp
-- Commit: `04f01c1c7834336a3aef1804149cd5bcbd883a3e`
-- License: MIT
-- License text: https://github.com/CIRFMF/ksef-client-csharp/blob/04f01c1c7834336a3aef1804149cd5bcbd883a3e/LICENCE.txt
+| Repository                                   | Commit                                     | License and copyright notice                                                                                                                          |
+| -------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| https://github.com/CIRFMF/ksef-client-csharp | `04f01c1c7834336a3aef1804149cd5bcbd883a3e` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-client-csharp/blob/04f01c1c7834336a3aef1804149cd5bcbd883a3e/LICENCE.txt) |
+| https://github.com/CIRFMF/ksef-client-java   | `fd948a3d70c86335a216d988e52c697b59065a4c` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-client-java/blob/fd948a3d70c86335a216d988e52c697b59065a4c/LICENSE.md)    |
+| https://github.com/CIRFMF/ksef-pdf-generator | `1835553940728b8cb88f8b0298da732d56a3d2a5` | [MIT; Copyright © 2025 CIRF](https://github.com/CIRFMF/ksef-pdf-generator/blob/1835553940728b8cb88f8b0298da732d56a3d2a5/LICENSE)                      |
+| https://github.com/CIRFMF/ksef-api           | `93b843d5def041f69fe2a26d0d90a53e9fa9987a` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-api/blob/93b843d5def041f69fe2a26d0d90a53e9fa9987a/LICENSE.txt)           |
 
-Copyright in that upstream repository remains with the Ministry of Finance as stated by its license.
+Exact byte copies of the upstream notices are retained in the deployed source tree:
+
+- [`public/third-party/cirfmf/ksef-client-csharp/LICENCE.txt`](public/third-party/cirfmf/ksef-client-csharp/LICENCE.txt)
+- [`public/third-party/cirfmf/ksef-client-java/LICENSE.md`](public/third-party/cirfmf/ksef-client-java/LICENSE.md)
+- [`public/third-party/cirfmf/ksef-pdf-generator/LICENSE`](public/third-party/cirfmf/ksef-pdf-generator/LICENSE)
+- [`public/third-party/cirfmf/ksef-api/LICENSE.txt`](public/third-party/cirfmf/ksef-api/LICENSE.txt)
+
+`npm run verify:upstreams` re-downloads all four pinned raw notice URLs, enforces their declared byte limits, and compares both their SHA-256 values and exact bytes with these local copies. The manifest/scope-bound result is recorded in [`docs/assets/upstream-verification.json`](docs/assets/upstream-verification.json).
+
+The C# client's nested PDF-test fixture is byte-identical to the canonical `ksef-pdf-generator` source and is retained as a separate provenance record with `contentDuplicateOf`.
+
+The repository-level MIT notices are evidence of each upstream software repository's declared license. They do not, by themselves, establish separate reuse terms for every official XML fixture or schema. Public redistribution of the bundled official-source corpus remains gated pending confirmation of the applicable MF/CRD terms and asset-level provenance for the PDF-generator XML.
 
 ## JavaScript dependencies
 

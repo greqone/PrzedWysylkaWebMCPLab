@@ -15,10 +15,13 @@ The public project is clean-room code. It does not copy the private PrzedWysylka
 The release contains every XML/XSD asset in the frozen first-party sources:
 
 - 26 FA(3) XML examples from the official Ministry of Finance archive: all 26 validate against the canonical CRD schema closure.[12]
-- Three FA(3)-namespace templates from `CIRFMF/ksef-client-csharp@04f01c1c7834336a3aef1804149cd5bcbd883a3e`: base, attachment, and intentionally disallowed-Unicode fixtures.[16][18]
+- Eighteen FA(3)-namespace XML source records from pinned CIRFMF C#, Java, and PDF-generator snapshots: 14 unique raw Git blobs, two expected-valid source records, and 16 expected-invalid template/edge-case records.[16][23][24]
 - One adjacent PEF/UBL XML fixture from the same pinned client. It is catalogued as `related-ubl`, never represented as FA(3).
 - Four canonical CRD XSD files: `schemat.xsd` plus its complete transitive import/include closure.[14]
 - Two CIRFMF XSD source records. `StrukturyDanych_v10-0E.xsd` is byte-identical to CRD; CIRFMF `schemat.xsd` is a separate byte variant and is not used as the canonical validator root.[19]
+- Four FA(3) XSD source records from pinned `CIRFMF/ksef-api`; the API root is byte-identical to the canonical CRD root and remains provenance-only.[25]
+
+The result is 55 source records: 45 XML and 10 XSD. Completeness is defined against exact commits and exact source-path sets. FA(2), FA_RR, UPO, authentication, and PEF/UBL are distinct contracts and are excluded from the FA(3) completeness claim.
 
 Every source record has a stable ID, source URL/path, pinned upstream revision where applicable, SHA-256, byte size, role, root namespace, expected validation class, and provenance/license note in `data/official-assets.lock.json`. Original bytes are immutable. Runtime resolver aliases are generated separately.
 
@@ -75,7 +78,7 @@ The default demo uses the official parameterized FA(3) template. The raw templat
 ## Verification
 
 - Hash and count gate for all locked source records.
-- Browser `xmllint-wasm` corpus validation plus an independent native `xmllint` validity-class check for 26 valid examples and expected-invalid templates.
+- Browser `xmllint-wasm` corpus validation plus an independent native `xmllint` validity-class check for all 28 expected-valid and 16 expected-invalid FA(3) source records.
 - Unit tests for registry filters, normalized findings, replacement atomicity, stale proposal protection, and history.
 - Adapter tests proving six tools register with correct schemas/annotations and that staging cannot apply changes.
 - Playwright flow with an injected WebMCP harness: discover → select → validate → stage → human approve → revalidate.
@@ -97,3 +100,6 @@ Devpost requires a working live URL, public open-source repository containing `d
 [20] https://github.com/webmachinelearning/webmcp/tree/41d12f057167ccf5954dbcf49d99502cb6c84491  
 [21] https://www.npmjs.com/package/webmcp-types/v/0.1.5  
 [22] https://webmcp.devpost.com/rules
+[23] https://github.com/CIRFMF/ksef-client-java/tree/fd948a3d70c86335a216d988e52c697b59065a4c
+[24] https://github.com/CIRFMF/ksef-pdf-generator/tree/1835553940728b8cb88f8b0298da732d56a3d2a5
+[25] https://github.com/CIRFMF/ksef-api/tree/93b843d5def041f69fe2a26d0d90a53e9fa9987a

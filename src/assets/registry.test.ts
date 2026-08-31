@@ -59,10 +59,14 @@ describe("official asset registry", () => {
     expect(registry, "asset registry module must exist").not.toBeNull();
     if (!registry) return;
 
-    expect(registry.listAssets()).toHaveLength(36);
-    expect(registry.listAssets({ kind: "xml" })).toHaveLength(30);
-    expect(registry.listAssets({ kind: "xsd" })).toHaveLength(6);
+    expect(registry.listAssets()).toHaveLength(55);
+    expect(registry.listAssets({ kind: "xml" })).toHaveLength(45);
+    expect(registry.listAssets({ kind: "xsd" })).toHaveLength(10);
     expect(registry.listAssets({ role: "mf-valid-example" })).toHaveLength(26);
+    expect(registry.listAssets({ role: "cirfmf-fa3-template" })).toHaveLength(
+      16,
+    );
+    expect(registry.listAssets({ role: "cirfmf-fa3-example" })).toHaveLength(2);
     expect(registry.listAssets({ search: "Example 26" })).toHaveLength(1);
     expect(registry.listAssets()[0]?.id).toBe("mf-fa3-example-01");
   });

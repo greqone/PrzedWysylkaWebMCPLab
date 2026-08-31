@@ -90,7 +90,7 @@ export async function registerWebMcpTools(
       name: "list_official_assets",
       title: "List official FA(3) assets",
       description:
-        "List hash-locked official Ministry of Finance and CIRFMF XML/XSD assets available in this workbench. Returns metadata only.",
+        "List the complete filtered set of hash-locked Ministry of Finance and CIRFMF XML/XSD assets available in this workbench. Returns metadata only; the frozen corpus is bounded to 55 records and is never silently truncated or paginated.",
       inputSchema: {
         type: "object",
         properties: {

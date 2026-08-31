@@ -25,8 +25,17 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Audit high-severity dependency vulnerabilities
+        run: npm audit --audit-level=high
+
+      - name: Install native XML validator
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
       - name: Verify official asset bytes
         run: npm run verify:assets
+
+      - name: Verify native FA(3) validity classes
+        run: npm run verify:native
 
       - name: Unit and corpus tests
         run: npm test

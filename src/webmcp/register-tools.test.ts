@@ -114,6 +114,14 @@ describe("WebMCP registration", () => {
         .annotations?.untrustedContentHint,
     ).toBe(true);
 
+    const catalog = parseTextResult(
+      await registered
+        .find(({ tool }) => tool.name === "list_official_assets")
+        ?.tool.execute({}, { signal: new AbortController().signal }),
+    ) as { count: number; assets: unknown[] };
+    expect(catalog.count).toBe(55);
+    expect(catalog.assets).toHaveLength(55);
+
     registration.controller?.abort();
     expect(
       registered.every(({ options }) => options?.signal?.aborted === true),

@@ -72,9 +72,15 @@ try {
   }
 
   const rootSchema = resolve(temporary, "schemat.xsd");
-  const documents = manifest.assets.filter((record) =>
-    ["mf-valid-example", "cirfmf-fa3-template"].includes(record.role),
+  const documents = manifest.assets.filter(
+    (record) =>
+      record.kind === "xml" &&
+      ["valid", "invalid-template"].includes(record.expectedValidation),
   );
+  const expectedValidCount = documents.filter(
+    (record) => record.expectedValidation === "valid",
+  ).length;
+  const expectedInvalidCount = documents.length - expectedValidCount;
   const failures = [];
   for (const record of documents) {
     const result = spawnSync(
@@ -82,7 +88,7 @@ try {
       ["--noout", "--schema", rootSchema, sourcePath(record)],
       { encoding: "buffer" },
     );
-    const expectedValid = record.role === "mf-valid-example";
+    const expectedValid = record.expectedValidation === "valid";
     const actualValid = result.status === 0;
     if (actualValid !== expectedValid) {
       failures.push(
@@ -98,7 +104,7 @@ try {
     process.exitCode = 1;
   } else {
     console.log(
-      "Native validity-class check verified: 26 valid MF examples and 3 expected-invalid CIRFMF templates.",
+      `Native validity-class check verified: ${expectedValidCount} expected-valid and ${expectedInvalidCount} expected-invalid FA(3) source records.`,
     );
   }
 } finally {

@@ -74,22 +74,42 @@ describe("FA(3) corpus validation", () => {
     }
   }, 120_000);
 
-  test("rejects all three raw CIRFMF FA(3) templates", async () => {
+  test("matches declared validity for all 18 CIRFMF FA(3) source records", async () => {
     const validator = await loadValidator();
     expect(validator, "validator module must exist").not.toBeNull();
     if (!validator) return;
 
     const bundle = await validator.buildCanonicalSchemaBundle(loadLocalAsset);
-    const templates = listAssets({ role: "cirfmf-fa3-template" });
+    const fixtures = listAssets().filter(
+      (asset) =>
+        asset.kind === "xml" &&
+        asset.namespace === "http://crd.gov.pl/wzor/2025/06/25/13775/" &&
+        asset.sourceUrl.startsWith("https://raw.githubusercontent.com/CIRFMF/"),
+    );
 
-    for (const asset of templates) {
+    expect(fixtures).toHaveLength(18);
+    expect(
+      fixtures.filter((asset) => asset.expectedValidation === "valid"),
+    ).toHaveLength(2);
+    expect(
+      fixtures.filter(
+        (asset) => asset.expectedValidation === "invalid-template",
+      ),
+    ).toHaveLength(16);
+
+    for (const asset of fixtures) {
       const result = await validator.validateXml(
         await loadLocalAsset(asset.id),
         `${asset.id}.xml`,
         { schemaBundle: bundle },
       );
-      expect(result.valid, asset.id).toBe(false);
-      expect(result.findings.length, asset.id).toBeGreaterThan(0);
+      const expectedValid = asset.expectedValidation === "valid";
+      expect(result.valid, asset.id).toBe(expectedValid);
+      if (expectedValid) {
+        expect(result.findings, asset.id).toEqual([]);
+      } else {
+        expect(result.findings.length, asset.id).toBeGreaterThan(0);
+      }
     }
-  }, 60_000);
+  }, 120_000);
 });

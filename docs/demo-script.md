@@ -12,8 +12,8 @@ The final recording must be under three minutes, in English, with audible narrat
 
 Point out:
 
-- 36 locked official assets;
-- 30 XML and six XSD source records;
+- 55 locked official assets;
+- 45 XML and 10 XSD source records;
 - browser-local status;
 - six WebMCP tools live.
 
@@ -23,7 +23,7 @@ Point out:
 
 **Narration:**
 
-> This is not a hand-picked demo fixture. The repository contains every XML from the Ministry's official FA(3) example archive, all CIRFMF templates we froze, and the complete transitive CRD schema closure. Every source record is SHA-256 locked with its upstream provenance.
+> This is not a hand-picked demo fixture. The repository contains every XML from the Ministry's official FA(3) archive, every FA(3)-namespace XML path from the pinned CIRFMF C#, Java, and PDF-generator snapshots, and every scoped FA(3) XSD source record. All 55 records are byte-locked with upstream provenance.
 
 ## 0:38–1:02 — Ask the agent
 

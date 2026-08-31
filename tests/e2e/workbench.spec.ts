@@ -16,7 +16,7 @@ test("WebMCP harness stages a repair and only the human approves it", async ({
   await page.goto("/");
 
   await expect(page.getByText("6 WebMCP tools live")).toBeVisible();
-  await expect(page.locator(".asset-item")).toHaveCount(36);
+  await expect(page.locator(".asset-item")).toHaveCount(55);
   await expect(page.locator(".asset-item.is-selected")).toBeInViewport();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   await expect(page.getByTestId("source-code")).toContainText("#nip#");
@@ -26,7 +26,7 @@ test("WebMCP harness stages a repair and only the human approves it", async ({
     "list_official_assets",
     {},
   );
-  expect(catalog.count).toBe(36);
+  expect(catalog.count).toBe(55);
 
   const validation = await executeWebMcpTool<{
     valid: boolean;
@@ -93,7 +93,7 @@ test("ordinary browsers get an honest unsupported state and working human UI", a
   await page.goto("/");
 
   await expect(page.getByText("WebMCP unavailable")).toBeVisible();
-  await expect(page.locator(".asset-item")).toHaveCount(36);
+  await expect(page.locator(".asset-item")).toHaveCount(55);
   await page.getByRole("button", { name: "Stage guided repair" }).click();
   await expect(
     page.getByRole("heading", { name: "Pending human approval" }),
@@ -101,4 +101,18 @@ test("ordinary browsers get an honest unsupported state and working human UI", a
   await page.getByRole("button", { name: "Reject proposal" }).click();
   await expect(page.getByText("No pending change")).toBeVisible();
   await expect(page.getByTestId("source-code")).toContainText("#nip#");
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await page
+    .getByRole("searchbox", { name: "Search official assets" })
+    .fill("CIRFMF API structures v10 source");
+  await expect(page.locator(".asset-item")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: /CIRFMF API structures v10 source/iu })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "CIRFMF API structures v10 source" }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });

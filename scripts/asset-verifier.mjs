@@ -1,9 +1,22 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+function listXmlAndXsdFiles(directory) {
+  const files = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listXmlAndXsdFiles(path));
+    } else if (entry.isFile() && /\.(?:xml|xsd)$/iu.test(entry.name)) {
+      files.push(path);
+    }
+  }
+  return files;
 }
 
 export function verifyAssetManifest(root) {
@@ -34,17 +47,22 @@ export function verifyAssetManifest(root) {
 
   const publicRoot = resolve(root, "public");
   const allowedPrefix = `${publicRoot}${sep}`;
-  const ids = new Set();
+  const assetsById = new Map();
+  const localPaths = new Set();
 
   for (const asset of manifest.assets) {
     const id = typeof asset.id === "string" ? asset.id : "<missing-id>";
-    if (ids.has(id)) errors.push(`${id}: duplicate asset ID`);
-    ids.add(id);
+    if (assetsById.has(id)) errors.push(`${id}: duplicate asset ID`);
+    assetsById.set(id, asset);
 
     if (typeof asset.localPath !== "string") {
       errors.push(`${id}: localPath is missing`);
       continue;
     }
+    if (localPaths.has(asset.localPath)) {
+      errors.push(`${id}: duplicate localPath ${asset.localPath}`);
+    }
+    localPaths.add(asset.localPath);
 
     const filePath = resolve(publicRoot, asset.localPath);
     if (!filePath.startsWith(allowedPrefix)) {
@@ -64,6 +82,48 @@ export function verifyAssetManifest(root) {
     }
     if (sha256(bytes) !== asset.sha256) {
       errors.push(`${id}: SHA-256 mismatch`);
+    }
+  }
+
+  const officialAssetsRoot = resolve(publicRoot, "official-assets");
+  if (existsSync(officialAssetsRoot)) {
+    for (const filePath of listXmlAndXsdFiles(officialAssetsRoot)) {
+      const localPath = relative(publicRoot, filePath).split(sep).join("/");
+      if (!localPaths.has(localPath)) {
+        errors.push(`unlocked official asset: ${localPath}`);
+      }
+    }
+  }
+
+  for (const asset of manifest.assets) {
+    if (asset.contentDuplicateOf === undefined) continue;
+
+    const id = typeof asset.id === "string" ? asset.id : "<missing-id>";
+    if (
+      typeof asset.contentDuplicateOf !== "string" ||
+      asset.contentDuplicateOf.length === 0
+    ) {
+      errors.push(`${id}: contentDuplicateOf must be a non-empty asset ID`);
+      continue;
+    }
+
+    const target = assetsById.get(asset.contentDuplicateOf);
+    if (!target) {
+      errors.push(`${id}: contentDuplicateOf target is missing`);
+      continue;
+    }
+    if (target === asset) {
+      errors.push(`${id}: contentDuplicateOf cannot reference itself`);
+      continue;
+    }
+    if (target.contentDuplicateOf !== undefined) {
+      errors.push(`${id}: contentDuplicateOf must reference a canonical asset`);
+      continue;
+    }
+    if (asset.bytes !== target.bytes || asset.sha256 !== target.sha256) {
+      errors.push(
+        `${id}: contentDuplicateOf ${asset.contentDuplicateOf} does not match bytes`,
+      );
     }
   }
 
