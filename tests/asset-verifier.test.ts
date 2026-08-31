@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
@@ -12,6 +12,12 @@ type VerificationReport = {
 };
 
 type VerifierModule = {
+  classifyFsutilReparseResult(result: {
+    error?: Error;
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  }): boolean;
   verifyAssetManifest(root: string): VerificationReport;
 };
 
@@ -22,6 +28,77 @@ async function loadVerifier(): Promise<VerifierModule | null> {
 }
 
 describe("asset verifier", () => {
+  test("accepts only Win32 error 4390 as a clean fsutil result", async () => {
+    const verifier = await loadVerifier();
+    expect(verifier, "asset verifier module must exist").not.toBeNull();
+    if (!verifier) return;
+
+    expect(
+      verifier.classifyFsutilReparseResult({
+        status: 0,
+        stdout: "Reparse Tag Value : 0xa0000003",
+        stderr: "",
+      }),
+    ).toBe(true);
+    expect(
+      verifier.classifyFsutilReparseResult({
+        status: 1,
+        stdout: "Error 4390: not a reparse point",
+        stderr: "",
+      }),
+    ).toBe(false);
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        status: 1,
+        stdout: "Error 5: access denied",
+        stderr: "",
+      }),
+    ).toThrow("fsutil reparse query failed");
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        status: 1,
+        stdout: "Error 5: access denied\nError 4390: not a reparse point",
+        stderr: "",
+      }),
+    ).toThrow("fsutil reparse query failed");
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        status: 1,
+        stdout: "",
+        stderr: "Error 4390: not a reparse point",
+      }),
+    ).toThrow("fsutil reparse query failed");
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        status: 1,
+        stdout: "Error 4390:",
+        stderr: "",
+      }),
+    ).toThrow("fsutil reparse query failed");
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        status: 2,
+        stdout: "Error 4390: not a reparse point",
+        stderr: "",
+      }),
+    ).toThrow("fsutil reparse query failed");
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        error: new Error("spawn failed"),
+        status: null,
+        stdout: "",
+        stderr: "",
+      }),
+    ).toThrow("spawn failed");
+    expect(() =>
+      verifier.classifyFsutilReparseResult({
+        status: null,
+        stdout: "",
+        stderr: "timed out",
+      }),
+    ).toThrow("fsutil reparse query failed");
+  });
+
   test("accepts the frozen repository corpus", async () => {
     const verifier = await loadVerifier();
     expect(verifier, "asset verifier module must exist").not.toBeNull();
@@ -136,6 +213,126 @@ describe("asset verifier", () => {
     expect(report.ok).toBe(false);
     expect(report.errors.join("\n")).toContain(
       "second: duplicate localPath official-assets/same.xml",
+    );
+  });
+
+  test("rejects an asset reached through a symlink or reparse point", async () => {
+    const verifier = await loadVerifier();
+    expect(verifier, "asset verifier module must exist").not.toBeNull();
+    if (!verifier) return;
+
+    const root = mkdtempSync(resolve(tmpdir(), "webmcp-symlink-asset-"));
+    const officialRoot = resolve(root, "public", "official-assets");
+    const externalRoot = resolve(root, "external-assets");
+    mkdirSync(resolve(root, "data"), { recursive: true });
+    mkdirSync(officialRoot, { recursive: true });
+    mkdirSync(externalRoot, { recursive: true });
+    const bytes = Buffer.from("<outside/>");
+    writeFileSync(resolve(externalRoot, "outside.xml"), bytes);
+    symlinkSync(
+      externalRoot,
+      resolve(officialRoot, "linked"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    writeFileSync(
+      resolve(root, "data", "official-assets.lock.json"),
+      JSON.stringify({
+        assets: [
+          {
+            id: "outside",
+            localPath: "official-assets/linked/outside.xml",
+            sha256: createHash("sha256").update(bytes).digest("hex"),
+            bytes: bytes.length,
+          },
+        ],
+      }),
+    );
+
+    const report = verifier.verifyAssetManifest(root);
+
+    expect(report.ok).toBe(false);
+    expect(report.errors.join("\n")).toContain(
+      "outside: symbolic link or reparse point in localPath",
+    );
+  });
+
+  test("rejects a junction even when its target remains inside public", async () => {
+    const verifier = await loadVerifier();
+    expect(verifier, "asset verifier module must exist").not.toBeNull();
+    if (!verifier) return;
+
+    const root = mkdtempSync(resolve(tmpdir(), "webmcp-internal-junction-"));
+    const officialRoot = resolve(root, "public", "official-assets");
+    const targetRoot = resolve(officialRoot, "target");
+    mkdirSync(resolve(root, "data"), { recursive: true });
+    mkdirSync(targetRoot, { recursive: true });
+    const bytes = Buffer.from("<inside/>");
+    writeFileSync(resolve(targetRoot, "inside.xml"), bytes);
+    symlinkSync(
+      targetRoot,
+      resolve(officialRoot, "linked"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    writeFileSync(
+      resolve(root, "data", "official-assets.lock.json"),
+      JSON.stringify({
+        assets: [
+          {
+            id: "inside",
+            localPath: "official-assets/linked/inside.xml",
+            sha256: createHash("sha256").update(bytes).digest("hex"),
+            bytes: bytes.length,
+          },
+        ],
+      }),
+    );
+
+    const report = verifier.verifyAssetManifest(root);
+
+    expect(report.ok).toBe(false);
+    expect(report.errors.join("\n")).toContain(
+      "inside: symbolic link or reparse point in localPath",
+    );
+  });
+
+  test("rejects an orphan junction below official-assets", async () => {
+    const verifier = await loadVerifier();
+    expect(verifier, "asset verifier module must exist").not.toBeNull();
+    if (!verifier) return;
+
+    const root = mkdtempSync(resolve(tmpdir(), "webmcp-orphan-junction-"));
+    const officialRoot = resolve(root, "public", "official-assets");
+    const externalRoot = resolve(root, "external-assets");
+    mkdirSync(resolve(root, "data"), { recursive: true });
+    mkdirSync(officialRoot, { recursive: true });
+    mkdirSync(externalRoot, { recursive: true });
+    const locked = Buffer.from("<locked/>");
+    writeFileSync(resolve(officialRoot, "locked.xml"), locked);
+    writeFileSync(resolve(externalRoot, "orphan.xml"), "<orphan/>");
+    symlinkSync(
+      externalRoot,
+      resolve(officialRoot, "linked"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    writeFileSync(
+      resolve(root, "data", "official-assets.lock.json"),
+      JSON.stringify({
+        assets: [
+          {
+            id: "locked",
+            localPath: "official-assets/locked.xml",
+            sha256: createHash("sha256").update(locked).digest("hex"),
+            bytes: locked.length,
+          },
+        ],
+      }),
+    );
+
+    const report = verifier.verifyAssetManifest(root);
+
+    expect(report.ok).toBe(false);
+    expect(report.errors.join("\n")).toContain(
+      "symbolic link or reparse point under official-assets: official-assets/linked",
     );
   });
 

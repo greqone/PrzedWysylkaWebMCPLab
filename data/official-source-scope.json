@@ -18,40 +18,93 @@
     {
       "name": "ksef-api",
       "commit": "93b843d5def041f69fe2a26d0d90a53e9fa9987a",
+      "defaultBranch": "main",
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-api/zip/93b843d5def041f69fe2a26d0d90a53e9fa9987a",
+        "bytes": 1930976,
+        "sha256": "5264ef22c44080597ee8676c6dfe20596f030eeaae82479f00036de017b15818"
+      },
       "fa3XmlSourceRecords": 0,
       "fa3XsdSourceRecords": 4
     },
     {
       "name": "ksef-client-csharp",
       "commit": "04f01c1c7834336a3aef1804149cd5bcbd883a3e",
+      "defaultBranch": "main",
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-csharp/zip/04f01c1c7834336a3aef1804149cd5bcbd883a3e",
+        "bytes": 1653125,
+        "sha256": "738309e32b24e9eeadc8620782d84015cd48ee4ea977706d3fb404bf47bd9a2a"
+      },
       "fa3XmlSourceRecords": 12,
       "fa3XsdSourceRecords": 2
     },
     {
       "name": "ksef-client-java",
       "commit": "fd948a3d70c86335a216d988e52c697b59065a4c",
+      "defaultBranch": "main",
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-java/zip/fd948a3d70c86335a216d988e52c697b59065a4c",
+        "bytes": 932858,
+        "sha256": "43266d022764de1c003870c7d4fedf194978fe7a5733eaa92cf2a7241d3c318c"
+      },
       "fa3XmlSourceRecords": 5,
       "fa3XsdSourceRecords": 0
     },
     {
       "name": "ksef-latarnia",
       "commit": "b3d819616eb640270a2e11321d424f206d5e0b1a",
+      "defaultBranch": "main",
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-latarnia/zip/b3d819616eb640270a2e11321d424f206d5e0b1a",
+        "bytes": 7840,
+        "sha256": "cf5a289488f487625564b2d62dda7998c1e6eac5ebf36383dbbdf7da1ce51d0a"
+      },
       "fa3XmlSourceRecords": 0,
       "fa3XsdSourceRecords": 0
     },
     {
       "name": "ksef-pdf-generator",
       "commit": "1835553940728b8cb88f8b0298da732d56a3d2a5",
+      "defaultBranch": "main",
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-pdf-generator/zip/1835553940728b8cb88f8b0298da732d56a3d2a5",
+        "bytes": 409910,
+        "sha256": "d62b36fe243d5f324f411f75894768a87e5e729e597b765fce9a771df0508e33"
+      },
       "fa3XmlSourceRecords": 1,
       "fa3XsdSourceRecords": 0
     },
     {
       "name": "ksef-schematy",
       "commit": "cd826b831f74f73533ccf26876439ab8d9efdcf5",
+      "defaultBranch": "main",
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-schematy/zip/cd826b831f74f73533ccf26876439ab8d9efdcf5",
+        "bytes": 831,
+        "sha256": "1bf774cba88c631208db9cdba295a6005aebd4636f1fa51016d92e634a071e9a"
+      },
       "fa3XmlSourceRecords": 0,
       "fa3XsdSourceRecords": 0
     }
   ],
+  "cirfmfCensusRules": {
+    "fa3XmlNamespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+    "fa3XmlRootElement": "Faktura",
+    "fa3XsdPathGlobs": {
+      "ksef-api": [
+        "faktury/schemy/FA/bazowe/*.xsd",
+        "faktury/schemy/FA/schemat_FA(3)_*.xsd"
+      ],
+      "ksef-client-csharp": ["KSeF.Client.Tests.Core/Schemas/*.xsd"]
+    },
+    "retainedAdjacentXml": {
+      "repository": "ksef-client-csharp",
+      "sourcePath": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+      "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+      "rootElement": "Invoice"
+    }
+  },
   "cirfmfLicenseResources": [
     {
       "repository": "ksef-api",

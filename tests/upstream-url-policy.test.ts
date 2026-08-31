@@ -35,6 +35,7 @@ describe("upstream verifier URL policy", () => {
     "https://ksef.podatki.gov.pl/media/e5cia0ey/przykladowe-pliki-dla-struktury-logicznej-e-faktury-fa-3.zip",
     "https://crd.gov.pl/wzor/2025/06/25/13775/schemat.xsd",
     "https://raw.githubusercontent.com/CIRFMF/ksef-client-csharp/04f01c1c7834336a3aef1804149cd5bcbd883a3e/KSeF.Client.Tests.Core/Templates/invoice-template-fa-3.xml",
+    "https://codeload.github.com/CIRFMF/ksef-client-csharp/zip/04f01c1c7834336a3aef1804149cd5bcbd883a3e",
   ])("allows frozen first-party URL %s", (url) => {
     const result = checkUrl(url);
     expect(result.status, result.stderr).toBe(0);
@@ -47,6 +48,8 @@ describe("upstream verifier URL policy", () => {
     "https://user:password@crd.gov.pl/wzor/2025/06/25/13775/schemat.xsd",
     "http://crd.gov.pl/wzor/2025/06/25/13775/schemat.xsd",
     "https://raw.githubusercontent.com/CIRFMF/ksef-api/main/faktury/schemy/FA/schemat_FA(3)_v1-0E.xsd",
+    "https://codeload.github.com/CIRFMF/ksef-api/zip/main",
+    "https://codeload.github.com/CIRFMF/ksef-api/zip/0000000000000000000000000000000000000000",
     "https://evil.example/asset.xml",
   ])("rejects non-frozen or unsafe URL %s", (url) => {
     const result = checkUrl(url);

@@ -93,4 +93,26 @@ describe("evidence wording", () => {
       "pins each TCP connection to a validated globally routable IP",
     );
   });
+
+  test("grounds CIRFMF completeness in an independent default-tree census", () => {
+    const readme = readFileSync(resolve(root, "README.md"), "utf8");
+    const submission = readFileSync(
+      resolve(root, "docs/submission.md"),
+      "utf8",
+    );
+
+    for (const [path, content] of [
+      ["README.md", readme],
+      ["docs/submission.md", submission],
+    ] as const) {
+      expect(content, path).toContain("39 XML and 31 XSD paths");
+      expect(content, path).toContain("18 FA(3) XML and 6 FA(3) XSD paths");
+      expect(content, path).toContain("independent default-tree census");
+      expect(content, path).toContain("test suite re-executes the live census");
+      expect(content, path).toContain("verifier-owned snapshot identities");
+      expect(content, path).toContain("public-IP-pinned GitHub REST");
+    }
+    expect(readme).toContain("npm run verify:scope");
+    expect(readme).toContain("docs/assets/cirfmf-tree-census.json");
+  });
 });

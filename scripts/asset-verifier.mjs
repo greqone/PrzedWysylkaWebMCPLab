@@ -1,22 +1,92 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  existsSync,
+  lstatSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+} from "node:fs";
 import { relative, resolve, sep } from "node:path";
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-function listXmlAndXsdFiles(directory) {
+export function classifyFsutilReparseResult(result) {
+  if (result.error) throw result.error;
+  if (result.status === 0) return true;
+  const stdout = String(result.stdout ?? "").trim();
+  const stderr = String(result.stderr ?? "").trim();
+  if (
+    result.status === 1 &&
+    stderr === "" &&
+    /^Error 4390: \S[^\r\n]*$/u.test(stdout)
+  ) {
+    return false;
+  }
+  throw new Error(
+    `fsutil reparse query failed with status ${String(result.status)}`,
+  );
+}
+
+function isReparsePoint(path, cache) {
+  if (cache.has(path)) return cache.get(path);
+  const stats = lstatSync(path);
+  if (stats.isSymbolicLink()) {
+    cache.set(path, true);
+    return true;
+  }
+  if (process.platform !== "win32") {
+    cache.set(path, false);
+    return false;
+  }
+  const result = spawnSync("fsutil.exe", ["reparsepoint", "query", path], {
+    encoding: "utf8",
+    timeout: 5_000,
+    windowsHide: true,
+  });
+  const reparse = classifyFsutilReparseResult(result);
+  cache.set(path, reparse);
+  return reparse;
+}
+
+function listXmlAndXsdFiles(directory, publicRoot, errors, reparseCache) {
   const files = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
+    let reparse;
+    try {
+      reparse = isReparsePoint(path, reparseCache);
+    } catch (error) {
+      errors.push(
+        `cannot inspect reparse status for ${relative(publicRoot, path).split(sep).join("/")}: ${String(error)}`,
+      );
+      continue;
+    }
+    if (reparse) {
+      errors.push(
+        `symbolic link or reparse point under official-assets: ${relative(publicRoot, path).split(sep).join("/")}`,
+      );
+      continue;
+    }
     if (entry.isDirectory()) {
-      files.push(...listXmlAndXsdFiles(path));
+      files.push(...listXmlAndXsdFiles(path, publicRoot, errors, reparseCache));
     } else if (entry.isFile() && /\.(?:xml|xsd)$/iu.test(entry.name)) {
       files.push(path);
     }
   }
   return files;
+}
+
+function hasSymbolicPathComponent(root, localPath, reparseCache) {
+  let current = root;
+  for (const segment of localPath.split("/")) {
+    current = resolve(current, segment);
+    if (!existsSync(current)) return false;
+    if (isReparsePoint(current, reparseCache)) return true;
+  }
+  return false;
 }
 
 export function verifyAssetManifest(root) {
@@ -47,8 +117,11 @@ export function verifyAssetManifest(root) {
 
   const publicRoot = resolve(root, "public");
   const allowedPrefix = `${publicRoot}${sep}`;
+  const realPublicRoot = realpathSync(publicRoot);
+  const realAllowedPrefix = `${realPublicRoot}${sep}`;
   const assetsById = new Map();
   const localPaths = new Set();
+  const reparseCache = new Map();
 
   for (const asset of manifest.assets) {
     const id = typeof asset.id === "string" ? asset.id : "<missing-id>";
@@ -73,8 +146,30 @@ export function verifyAssetManifest(root) {
       errors.push(`${id}: file is missing`);
       continue;
     }
+    let hasReparseComponent;
+    try {
+      hasReparseComponent = hasSymbolicPathComponent(
+        publicRoot,
+        asset.localPath,
+        reparseCache,
+      );
+    } catch (error) {
+      errors.push(
+        `${id}: cannot inspect localPath reparse status: ${String(error)}`,
+      );
+      continue;
+    }
+    if (hasReparseComponent) {
+      errors.push(`${id}: symbolic link or reparse point in localPath`);
+      continue;
+    }
+    const realFilePath = realpathSync(filePath);
+    if (!realFilePath.startsWith(realAllowedPrefix)) {
+      errors.push(`${id}: symbolic link or reparse point in localPath`);
+      continue;
+    }
 
-    const bytes = readFileSync(filePath);
+    const bytes = readFileSync(realFilePath);
     if (bytes.length !== asset.bytes) {
       errors.push(
         `${id}: byte length mismatch (expected ${asset.bytes}, received ${bytes.length})`,
@@ -87,7 +182,12 @@ export function verifyAssetManifest(root) {
 
   const officialAssetsRoot = resolve(publicRoot, "official-assets");
   if (existsSync(officialAssetsRoot)) {
-    for (const filePath of listXmlAndXsdFiles(officialAssetsRoot)) {
+    for (const filePath of listXmlAndXsdFiles(
+      officialAssetsRoot,
+      publicRoot,
+      errors,
+      reparseCache,
+    )) {
       const localPath = relative(publicRoot, filePath).split(sep).join("/");
       if (!localPaths.has(localPath)) {
         errors.push(`unlocked official asset: ${localPath}`);

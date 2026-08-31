@@ -59,6 +59,8 @@ That is **55 locked source records: 45 XML and 10 XSD**, including **44 FA(3) XM
 
 The frozen scope is mechanical: every XML whose default namespace is the canonical FA(3) `13775` namespace in the pinned CIRFMF C#, Java, and PDF-generator snapshots; every XSD directly under the FA schema set in the pinned CIRFMF API snapshot; all 26 XMLs in the official Ministry archive; and the complete canonical CRD closure. FA(2), FA_RR, UPO, authentication, and PEF/UBL are different contracts and are excluded from the FA(3) completeness claim. [`data/official-source-scope.json`](data/official-source-scope.json) records the observation date, definition, exclusions, all six CIRFMF repository pins—including zero-match repositories—and source-record versus unique-blob totals. Every included record has its source URL/path, upstream revision, byte length, SHA-256, namespace, role, and expected validation class in [`data/official-assets.lock.json`](data/official-assets.lock.json).
 
+An independent default-tree census downloads immutable archives for all six repositories, verifies that each pin is still its live `main` head, and partitions all **39 XML and 31 XSD paths** by verifier-owned source rules that do not come from the asset manifest or scope ledger. Repository names, branches, commits, archive URLs, byte counts, hashes, and expected source counts are verifier-owned snapshot identities; the scope ledger must equal them exactly and cannot redirect the census. Live heads come from public-IP-pinned GitHub REST with proxies disabled and connected peers revalidated. The census discovers exactly **18 FA(3) XML and 6 FA(3) XSD paths**, proves the two zero-match repositories from complete tree inventories, and reconciles those discovered identities with the locked corpus. Before Python opens an archive, a bounded parser rejects ZIP64 and checks every central and local header, member count, compressed range, total expansion, XML/XSD member size, duplicate name, and unsafe path. The test suite re-executes the live census instead of trusting the committed report, then independently asserts its complete partitions, roots, manifest equality, retained UBL, and zero-match inventories; [`docs/assets/cirfmf-tree-census.json`](docs/assets/cirfmf-tree-census.json) is the full included/excluded evidence snapshot.
+
 The bundled XML/XSD files are excluded from this repository's MIT license. See the [notice stored beside the assets](public/official-assets/NOTICE.md) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 `npm run verify:assets` hashes all 55 files and verifies every exact-duplicate relationship. Git treats official assets as binary (`-text -diff`) so Windows line-ending conversion cannot corrupt upstream bytes. Every browser fetch also verifies the exact byte count and SHA-256 before decoding or displaying the source.
@@ -105,6 +107,7 @@ Open the URL printed by Vite.
 
 ```bash
 npm run verify:assets   # SHA-256, byte count, and duplicate graph for all 55 assets
+npm run verify:scope    # independent six-repository default-tree census
 npm test                # unit, contract, corpus, and React interaction tests
 npm run typecheck
 npm run lint
@@ -123,6 +126,14 @@ npm run verify:native
 It independently checks every FA(3) source record against its declared validity class: 28 expected-valid and 16 expected-invalid records. It compares validity classes, not diagnostic text or line-number identity. Set `XMLLINT_BIN` if `xmllint` is not on `PATH`.
 
 Optional networked upstream replay gate (Python 3):
+
+```bash
+npm run verify:scope
+```
+
+This independently enumerates every XML/XSD path in the six pinned CIRFMF default trees, classifies XML roots and FA(3) schema paths, verifies live default refs, records all exclusions, and fails unless the discovered sets exactly equal the manifest.
+
+The separate byte replay gate is:
 
 ```bash
 npm run verify:upstreams
@@ -164,6 +175,7 @@ See [`docs/architecture.md`](docs/architecture.md) for component boundaries and 
 
 - [`docs/submission.md`](docs/submission.md) — English Devpost copy
 - [`docs/demo-script.md`](docs/demo-script.md) — sub-three-minute video runbook
+- [`docs/assets/cirfmf-tree-census.json`](docs/assets/cirfmf-tree-census.json) — independent default-tree completeness evidence
 - [`docs/assets/upstream-verification.json`](docs/assets/upstream-verification.json) — live first-party byte replay evidence
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — asset and dependency provenance
 

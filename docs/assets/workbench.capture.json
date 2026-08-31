@@ -3,8 +3,8 @@
   "generatedBy": "npm run capture:demo",
   "evidenceScope": "real Chromium with a standards-shaped injected WebMCP harness; not browser-native API or agent proof",
   "manifestSha256": "6fa4594228e3d499b304744447021a3a6848422ae2f8eb9e8c7b619489eff10e",
-  "sourceScopeSha256": "33e7b1b355c94a1d73a75a2822f8eea8660c43d2cb420967eefebf2f4d6c19be",
-  "screenshotSha256": "a8dbe1e26d46165560016003ed6508dae240e818da1c6f38f053565d42db85ff",
+  "sourceScopeSha256": "403b9e44f9b84dbb6463991129a683832b75e63f1978ee14abd6cf558474be70",
+  "screenshotSha256": "706146c45291388b3bceb963e883426ccc8523126889efa2a48e28e4692dd066",
   "corpus": {
     "records": 55,
     "xml": 45,

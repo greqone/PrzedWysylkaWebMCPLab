@@ -74,6 +74,7 @@ All tool callbacks reuse the same asset registry, validator, replacement engine,
 The automated suite proves:
 
 - complete 55-record source inventory, byte hashes, and duplicate graph;
+- an independent default-tree census partitions all 39 XML and 31 XSD paths from six live pinned `main` heads and discovers exactly 18 FA(3) XML and 6 FA(3) XSD paths before reconciling them with the manifest; all repository/archive fields are verifier-owned snapshot identities, live heads use public-IP-pinned GitHub REST, bounded ZIP64/central/local-header and expansion checks finish before archive extraction, and the test suite re-executes the live census, independently asserting a temporary result rather than trusting the committed report;
 - live upstream replay of all 55 records across 30 corpus HTTP resources plus four pinned CIRFMF license resources—34 total HTTP resources—with bounded streaming, globally routable DNS-only pinned connections, peer-IP revalidation, and manifest/scope-bound evidence;
 - all 26 Ministry examples pass canonical FA(3) validation;
 - all 18 CIRFMF FA(3) source records match their declared classes: two expected-valid and 16 expected-invalid;

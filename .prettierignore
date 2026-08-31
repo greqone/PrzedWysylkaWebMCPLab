@@ -5,4 +5,5 @@ playwright-report/
 test-results/
 public/official-assets/
 public/third-party/
+docs/assets/cirfmf-tree-census.json
 package-lock.json

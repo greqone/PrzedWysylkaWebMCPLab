@@ -32,6 +32,9 @@ TRANSFER_DEADLINE_SECONDS = READ_LOOP_BUDGET_SECONDS + SOCKET_TIMEOUT_SECONDS
 RAW_GITHUB = re.compile(
     r"^https://raw\.githubusercontent\.com/CIRFMF/([^/]+)/([a-f0-9]{40})/"
 )
+CODELOAD_GITHUB = re.compile(
+    r"^https://codeload\.github\.com/CIRFMF/([^/]+)/zip/([a-f0-9]{40})$"
+)
 
 
 def sha256(data: bytes) -> str:
@@ -47,6 +50,10 @@ def build_url_policy(
     allowed_urls.update(
         str(record["sourceUrl"])
         for record in scope.get("cirfmfLicenseResources", [])
+    )
+    allowed_urls.update(
+        str(record["archive"]["sourceUrl"])
+        for record in scope.get("cirfmfRepositories", [])
     )
     pins = {
         str(record["name"]): str(record["commit"])
@@ -76,6 +83,7 @@ def validate_source_url(
     if parsed.hostname not in {
         "ksef.podatki.gov.pl",
         "crd.gov.pl",
+        "codeload.github.com",
         "raw.githubusercontent.com",
     }:
         raise ValueError("host is not first-party allowlisted")
@@ -86,6 +94,13 @@ def validate_source_url(
         repository, commit = match.groups()
         if pins.get(repository) != commit:
             raise ValueError("raw GitHub commit does not match the scope ledger")
+    if parsed.hostname == "codeload.github.com":
+        archive_match = CODELOAD_GITHUB.match(url)
+        if not archive_match:
+            raise ValueError("codeload URL lacks a pinned CIRFMF commit")
+        repository, commit = archive_match.groups()
+        if pins.get(repository) != commit:
+            raise ValueError("codeload commit does not match the scope ledger")
 
 
 def validate_resolved_addresses(

@@ -88,9 +88,26 @@ describe("frozen first-party FA(3) source inventory", () => {
       cirfmfRepositories: Array<{
         name: string;
         commit: string;
+        defaultBranch: string;
+        archive: {
+          sourceUrl: string;
+          bytes: number;
+          sha256: string;
+        };
         fa3XmlSourceRecords: number;
         fa3XsdSourceRecords: number;
       }>;
+      cirfmfCensusRules: {
+        fa3XmlNamespace: string;
+        fa3XmlRootElement: string;
+        fa3XsdPathGlobs: Record<string, string[]>;
+        retainedAdjacentXml: {
+          repository: string;
+          sourcePath: string;
+          namespace: string;
+          rootElement: string;
+        };
+      };
       cirfmfLicenseResources: Array<{
         repository: string;
         commit: string;
@@ -114,7 +131,7 @@ describe("frozen first-party FA(3) source inventory", () => {
       xsdUniqueBlobs: 8,
       adjacentUblSourceRecords: 1,
     });
-    expect(scope.cirfmfRepositories).toEqual([
+    expect(scope.cirfmfRepositories).toMatchObject([
       {
         name: "ksef-api",
         commit: "93b843d5def041f69fe2a26d0d90a53e9fa9987a",
@@ -152,6 +169,34 @@ describe("frozen first-party FA(3) source inventory", () => {
         fa3XsdSourceRecords: 0,
       },
     ]);
+    for (const repository of scope.cirfmfRepositories) {
+      expect(repository.defaultBranch, repository.name).toBe("main");
+      expect(repository.archive.sourceUrl, repository.name).toBe(
+        `https://codeload.github.com/CIRFMF/${repository.name}/zip/${repository.commit}`,
+      );
+      expect(repository.archive.bytes, repository.name).toBeGreaterThan(0);
+      expect(repository.archive.sha256, repository.name).toMatch(
+        /^[a-f0-9]{64}$/u,
+      );
+    }
+    expect(scope.cirfmfCensusRules).toEqual({
+      fa3XmlNamespace: "http://crd.gov.pl/wzor/2025/06/25/13775/",
+      fa3XmlRootElement: "Faktura",
+      fa3XsdPathGlobs: {
+        "ksef-api": [
+          "faktury/schemy/FA/bazowe/*.xsd",
+          "faktury/schemy/FA/schemat_FA(3)_*.xsd",
+        ],
+        "ksef-client-csharp": ["KSeF.Client.Tests.Core/Schemas/*.xsd"],
+      },
+      retainedAdjacentXml: {
+        repository: "ksef-client-csharp",
+        sourcePath:
+          "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+        namespace: "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+        rootElement: "Invoice",
+      },
+    });
     expect(scope.cirfmfLicenseResources).toEqual([
       {
         repository: "ksef-api",

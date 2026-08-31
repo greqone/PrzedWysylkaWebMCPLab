@@ -1,0 +1,727 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-08-31",
+  "censusMethod": "immutable codeload archives plus public-IP-pinned GitHub REST heads; verifier-owned repository snapshots and XML/XSD rules independent of the asset manifest and scope ledger",
+  "manifestSha256": "6fa4594228e3d499b304744447021a3a6848422ae2f8eb9e8c7b619489eff10e",
+  "sourceScopeSha256": "403b9e44f9b84dbb6463991129a683832b75e63f1978ee14abd6cf558474be70",
+  "allMatched": true,
+  "defaultHeadsVerified": true,
+  "scopeSnapshotLocked": true,
+  "censusRules": {
+    "fa3XmlNamespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+    "fa3XmlRootElement": "Faktura",
+    "fa3XsdPathGlobs": {
+      "ksef-api": [
+        "faktury/schemy/FA/bazowe/*.xsd",
+        "faktury/schemy/FA/schemat_FA(3)_*.xsd"
+      ],
+      "ksef-client-csharp": [
+        "KSeF.Client.Tests.Core/Schemas/*.xsd"
+      ]
+    },
+    "retainedAdjacentXml": {
+      "repository": "ksef-client-csharp",
+      "sourcePath": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+      "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+      "rootElement": "Invoice"
+    }
+  },
+  "totals": {
+    "repositories": 6,
+    "xmlPaths": 39,
+    "xsdPaths": 31,
+    "fa3XmlPaths": 18,
+    "fa3XsdPaths": 6,
+    "retainedAdjacentXml": 1
+  },
+  "archiveLimits": {
+    "maxMembersPerArchive": 10000,
+    "maxUncompressedBytesPerArchive": 67108864,
+    "maxXmlOrXsdMemberBytes": 4194304
+  },
+  "repositories": [
+    {
+      "name": "ksef-api",
+      "remoteUrl": "https://github.com/CIRFMF/ksef-api.git",
+      "defaultHeadUrl": "https://api.github.com/repos/CIRFMF/ksef-api/git/ref/heads/main",
+      "defaultHeadTransport": "proxy-disabled public-IP-pinned HTTPS with peer revalidation",
+      "defaultBranch": "main",
+      "pinnedCommit": "93b843d5def041f69fe2a26d0d90a53e9fa9987a",
+      "currentDefaultHead": "93b843d5def041f69fe2a26d0d90a53e9fa9987a",
+      "defaultHeadMatchesPin": true,
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-api/zip/93b843d5def041f69fe2a26d0d90a53e9fa9987a",
+        "bytes": 1930976,
+        "sha256": "5264ef22c44080597ee8676c6dfe20596f030eeaae82479f00036de017b15818"
+      },
+      "archiveMemberCount": 100,
+      "fileCount": 77,
+      "totalUncompressedBytes": 6829701,
+      "xmlPaths": [
+        "faktury/upo/przyklady/v4-3/kontekst-id-zlozony-vat-ue/upo-faktura-id-zlozony-vat-ue.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-id-zlozony-vat-ue/upo-sesja-id-zlozony-vat-ue.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-internal-id/upo-faktura-internal-id.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-internal-id/upo-sesja-internal-id.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-nip/upo-faktura-kontekst-id-nip.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-nip/upo-sesja-kontekst-id-nip.xml"
+      ],
+      "xsdPaths": [
+        "auth/schemy/schemat_auth_v2-0.xsd",
+        "auth/schemy/schemat_auth_v2-1.xsd",
+        "faktury/schemy/FA/bazowe/ElementarneTypyDanych_v10-0E.xsd",
+        "faktury/schemy/FA/bazowe/KodyKrajow_v10-0E.xsd",
+        "faktury/schemy/FA/bazowe/StrukturyDanych_v10-0E.xsd",
+        "faktury/schemy/FA/schemat_FA(2)_v1-0E.xsd",
+        "faktury/schemy/FA/schemat_FA(3)_v1-0E.xsd",
+        "faktury/schemy/PEF/Schemat_PEF(3)_v2-1.xsd",
+        "faktury/schemy/PEF/Schemat_PEF_KOR(3)_v2-1.xsd",
+        "faktury/schemy/PEF/bazowe/20241206_PEFPL-CommonAggregateComponents-2.1-v1.4.34.xsd",
+        "faktury/schemy/PEF/bazowe/20241206_PEFPL-CommonBasicComponents-2.1-v1.4.34.xsd",
+        "faktury/schemy/PEF/bazowe/CCTS_CCT_SchemaModule-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonAggregateComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonBasicComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonExtensionComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonSignatureComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-ExtensionContentDataType-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-QualifiedDataTypes-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-SignatureAggregateComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-SignatureBasicComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-UnqualifiedDataTypes-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-XAdESv132-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-XAdESv141-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-xmldsig-core-schema-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/commontypes.xsd",
+        "faktury/schemy/PEF/bazowe/isotypes.xsd",
+        "faktury/schemy/RR/schemat_FA_RR(1)_v1-1E.xsd",
+        "faktury/upo/schemy/upo-v4-3.xsd"
+      ],
+      "fa3XmlPaths": [],
+      "fa3XsdPaths": [
+        "faktury/schemy/FA/bazowe/ElementarneTypyDanych_v10-0E.xsd",
+        "faktury/schemy/FA/bazowe/KodyKrajow_v10-0E.xsd",
+        "faktury/schemy/FA/bazowe/StrukturyDanych_v10-0E.xsd",
+        "faktury/schemy/FA/schemat_FA(3)_v1-0E.xsd"
+      ],
+      "excludedXmlPaths": [
+        "faktury/upo/przyklady/v4-3/kontekst-id-zlozony-vat-ue/upo-faktura-id-zlozony-vat-ue.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-id-zlozony-vat-ue/upo-sesja-id-zlozony-vat-ue.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-internal-id/upo-faktura-internal-id.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-internal-id/upo-sesja-internal-id.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-nip/upo-faktura-kontekst-id-nip.xml",
+        "faktury/upo/przyklady/v4-3/kontekst-nip/upo-sesja-kontekst-id-nip.xml"
+      ],
+      "excludedXsdPaths": [
+        "auth/schemy/schemat_auth_v2-0.xsd",
+        "auth/schemy/schemat_auth_v2-1.xsd",
+        "faktury/schemy/FA/schemat_FA(2)_v1-0E.xsd",
+        "faktury/schemy/PEF/Schemat_PEF(3)_v2-1.xsd",
+        "faktury/schemy/PEF/Schemat_PEF_KOR(3)_v2-1.xsd",
+        "faktury/schemy/PEF/bazowe/20241206_PEFPL-CommonAggregateComponents-2.1-v1.4.34.xsd",
+        "faktury/schemy/PEF/bazowe/20241206_PEFPL-CommonBasicComponents-2.1-v1.4.34.xsd",
+        "faktury/schemy/PEF/bazowe/CCTS_CCT_SchemaModule-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonAggregateComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonBasicComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonExtensionComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-CommonSignatureComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-ExtensionContentDataType-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-QualifiedDataTypes-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-SignatureAggregateComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-SignatureBasicComponents-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-UnqualifiedDataTypes-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-XAdESv132-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-XAdESv141-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/UBL-xmldsig-core-schema-2.1.xsd",
+        "faktury/schemy/PEF/bazowe/commontypes.xsd",
+        "faktury/schemy/PEF/bazowe/isotypes.xsd",
+        "faktury/schemy/RR/schemat_FA_RR(1)_v1-1E.xsd",
+        "faktury/upo/schemy/upo-v4-3.xsd"
+      ],
+      "malformedXmlPaths": [],
+      "xmlRoots": [
+        {
+          "path": "faktury/upo/przyklady/v4-3/kontekst-id-zlozony-vat-ue/upo-faktura-id-zlozony-vat-ue.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        },
+        {
+          "path": "faktury/upo/przyklady/v4-3/kontekst-id-zlozony-vat-ue/upo-sesja-id-zlozony-vat-ue.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        },
+        {
+          "path": "faktury/upo/przyklady/v4-3/kontekst-internal-id/upo-faktura-internal-id.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        },
+        {
+          "path": "faktury/upo/przyklady/v4-3/kontekst-internal-id/upo-sesja-internal-id.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        },
+        {
+          "path": "faktury/upo/przyklady/v4-3/kontekst-nip/upo-faktura-kontekst-id-nip.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        },
+        {
+          "path": "faktury/upo/przyklady/v4-3/kontekst-nip/upo-sesja-kontekst-id-nip.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        }
+      ],
+      "xsdRoots": [
+        {
+          "path": "auth/schemy/schemat_auth_v2-0.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "auth/schemy/schemat_auth_v2-1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/FA/bazowe/ElementarneTypyDanych_v10-0E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/FA/bazowe/KodyKrajow_v10-0E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/FA/bazowe/StrukturyDanych_v10-0E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/FA/schemat_FA(2)_v1-0E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/FA/schemat_FA(3)_v1-0E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/Schemat_PEF(3)_v2-1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/Schemat_PEF_KOR(3)_v2-1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/20241206_PEFPL-CommonAggregateComponents-2.1-v1.4.34.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/20241206_PEFPL-CommonBasicComponents-2.1-v1.4.34.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/CCTS_CCT_SchemaModule-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-CommonAggregateComponents-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-CommonBasicComponents-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-CommonExtensionComponents-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-CommonSignatureComponents-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-ExtensionContentDataType-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-QualifiedDataTypes-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-SignatureAggregateComponents-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-SignatureBasicComponents-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-UnqualifiedDataTypes-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-XAdESv132-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-XAdESv141-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/UBL-xmldsig-core-schema-2.1.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/commontypes.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/PEF/bazowe/isotypes.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/schemy/RR/schemat_FA_RR(1)_v1-1E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "faktury/upo/schemy/upo-v4-3.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        }
+      ]
+    },
+    {
+      "name": "ksef-client-csharp",
+      "remoteUrl": "https://github.com/CIRFMF/ksef-client-csharp.git",
+      "defaultHeadUrl": "https://api.github.com/repos/CIRFMF/ksef-client-csharp/git/ref/heads/main",
+      "defaultHeadTransport": "proxy-disabled public-IP-pinned HTTPS with peer revalidation",
+      "defaultBranch": "main",
+      "pinnedCommit": "04f01c1c7834336a3aef1804149cd5bcbd883a3e",
+      "currentDefaultHead": "04f01c1c7834336a3aef1804149cd5bcbd883a3e",
+      "defaultHeadMatchesPin": true,
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-csharp/zip/04f01c1c7834336a3aef1804149cd5bcbd883a3e",
+        "bytes": 1653125,
+        "sha256": "738309e32b24e9eeadc8620782d84015cd48ee4ea977706d3fb404bf47bd9a2a"
+      },
+      "archiveMemberCount": 1051,
+      "fileCount": 905,
+      "totalUncompressedBytes": 4510868,
+      "xmlPaths": [
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-2.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef-correction.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef-with-attachment.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-attachment.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-custom-Subject2.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-custom-Subject3.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-disallowed-unicode-characters.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-multiple-Subject3.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-rr-1.xml",
+        "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/invoice.xml",
+        "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/upo.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-2.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-attachment.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-custom-Subject2.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-custom-Subject3.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3.xml",
+        "KSeF.DemoWebApp/Templates/invoice-template-fa-3.xml",
+        "KSeF.DemoWebApp/faktura-online.xml",
+        "KSeF.DemoWebApp/faktura-template.xml"
+      ],
+      "xsdPaths": [
+        "KSeF.Client.Tests.Core/Schemas/StrukturyDanych_v10-0E.xsd",
+        "KSeF.Client.Tests.Core/Schemas/schemat.xsd"
+      ],
+      "fa3XmlPaths": [
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-attachment.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-custom-Subject2.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-custom-Subject3.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-disallowed-unicode-characters.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-multiple-Subject3.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3.xml",
+        "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/invoice.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-attachment.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-custom-Subject2.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-custom-Subject3.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-3.xml",
+        "KSeF.DemoWebApp/Templates/invoice-template-fa-3.xml"
+      ],
+      "fa3XsdPaths": [
+        "KSeF.Client.Tests.Core/Schemas/StrukturyDanych_v10-0E.xsd",
+        "KSeF.Client.Tests.Core/Schemas/schemat.xsd"
+      ],
+      "excludedXmlPaths": [
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-2.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef-correction.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef-with-attachment.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+        "KSeF.Client.Tests.Core/Templates/invoice-template-fa-rr-1.xml",
+        "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/upo.xml",
+        "KSeF.Client.Tests/Templates/invoice-template-fa-2.xml",
+        "KSeF.DemoWebApp/faktura-online.xml",
+        "KSeF.DemoWebApp/faktura-template.xml"
+      ],
+      "excludedXsdPaths": [],
+      "malformedXmlPaths": [],
+      "xmlRoots": [
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-2.xml",
+          "namespace": "http://crd.gov.pl/wzor/2023/06/29/12648/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef-correction.xml",
+          "namespace": "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2",
+          "rootElement": "CreditNote"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef-with-attachment.xml",
+          "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+          "rootElement": "Invoice"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+          "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+          "rootElement": "Invoice"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-attachment.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-custom-Subject2.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-custom-Subject3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-disallowed-unicode-characters.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-with-multiple-Subject3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-rr-1.xml",
+          "namespace": "http://crd.gov.pl/wzor/2026/03/06/14189/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/invoice.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/upo.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-2",
+          "rootElement": "Potwierdzenie"
+        },
+        {
+          "path": "KSeF.Client.Tests/Templates/invoice-template-fa-2.xml",
+          "namespace": "http://crd.gov.pl/wzor/2023/06/29/12648/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-attachment.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-custom-Subject2.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests/Templates/invoice-template-fa-3-with-custom-Subject3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.Client.Tests/Templates/invoice-template-fa-3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.DemoWebApp/Templates/invoice-template-fa-3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.DemoWebApp/faktura-online.xml",
+          "namespace": "http://crd.gov.pl/wzor/2023/06/29/12648/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "KSeF.DemoWebApp/faktura-template.xml",
+          "namespace": "http://crd.gov.pl/wzor/2023/06/29/12648/",
+          "rootElement": "Faktura"
+        }
+      ],
+      "xsdRoots": [
+        {
+          "path": "KSeF.Client.Tests.Core/Schemas/StrukturyDanych_v10-0E.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        },
+        {
+          "path": "KSeF.Client.Tests.Core/Schemas/schemat.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        }
+      ]
+    },
+    {
+      "name": "ksef-client-java",
+      "remoteUrl": "https://github.com/CIRFMF/ksef-client-java.git",
+      "defaultHeadUrl": "https://api.github.com/repos/CIRFMF/ksef-client-java/git/ref/heads/main",
+      "defaultHeadTransport": "proxy-disabled public-IP-pinned HTTPS with peer revalidation",
+      "defaultBranch": "main",
+      "pinnedCommit": "fd948a3d70c86335a216d988e52c697b59065a4c",
+      "currentDefaultHead": "fd948a3d70c86335a216d988e52c697b59065a4c",
+      "defaultHeadMatchesPin": true,
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-java/zip/fd948a3d70c86335a216d988e52c697b59065a4c",
+        "bytes": 932858,
+        "sha256": "43266d022764de1c003870c7d4fedf194978fe7a5733eaa92cf2a7241d3c318c"
+      },
+      "archiveMemberCount": 574,
+      "fileCount": 456,
+      "totalUncompressedBytes": 2177084,
+      "xmlPaths": [
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-rr-1.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template_v3.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef_attachment.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef_correction.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_v3_self_invoicing.xml",
+        "demo-web-app/src/main/resources/xml/invoices/sample/invoice-template_v3.xml"
+      ],
+      "xsdPaths": [
+        "ksef-client/src/main/resources/xsd/AuthTokenRequest.xsd"
+      ],
+      "fa3XmlPaths": [
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template_v3.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_v3_self_invoicing.xml",
+        "demo-web-app/src/main/resources/xml/invoices/sample/invoice-template_v3.xml"
+      ],
+      "fa3XsdPaths": [],
+      "excludedXmlPaths": [
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-rr-1.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef_attachment.xml",
+        "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef_correction.xml"
+      ],
+      "excludedXsdPaths": [
+        "ksef-client/src/main/resources/xsd/AuthTokenRequest.xsd"
+      ],
+      "malformedXmlPaths": [],
+      "xmlRoots": [
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-rr-1.xml",
+          "namespace": "http://crd.gov.pl/wzor/2026/03/06/14189/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template.xml",
+          "namespace": "http://crd.gov.pl/wzor/2023/06/29/12648/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template_v3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef.xml",
+          "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+          "rootElement": "Invoice"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef_attachment.xml",
+          "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+          "rootElement": "Invoice"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_pef_correction.xml",
+          "namespace": "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2",
+          "rootElement": "CreditNote"
+        },
+        {
+          "path": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_v3_self_invoicing.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "demo-web-app/src/main/resources/xml/invoices/sample/invoice-template_v3.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        }
+      ],
+      "xsdRoots": [
+        {
+          "path": "ksef-client/src/main/resources/xsd/AuthTokenRequest.xsd",
+          "namespace": "http://www.w3.org/2001/XMLSchema",
+          "rootElement": "schema"
+        }
+      ]
+    },
+    {
+      "name": "ksef-latarnia",
+      "remoteUrl": "https://github.com/CIRFMF/ksef-latarnia.git",
+      "defaultHeadUrl": "https://api.github.com/repos/CIRFMF/ksef-latarnia/git/ref/heads/main",
+      "defaultHeadTransport": "proxy-disabled public-IP-pinned HTTPS with peer revalidation",
+      "defaultBranch": "main",
+      "pinnedCommit": "b3d819616eb640270a2e11321d424f206d5e0b1a",
+      "currentDefaultHead": "b3d819616eb640270a2e11321d424f206d5e0b1a",
+      "defaultHeadMatchesPin": true,
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-latarnia/zip/b3d819616eb640270a2e11321d424f206d5e0b1a",
+        "bytes": 7840,
+        "sha256": "cf5a289488f487625564b2d62dda7998c1e6eac5ebf36383dbbdf7da1ce51d0a"
+      },
+      "archiveMemberCount": 5,
+      "fileCount": 4,
+      "totalUncompressedBytes": 24500,
+      "xmlPaths": [],
+      "xsdPaths": [],
+      "fa3XmlPaths": [],
+      "fa3XsdPaths": [],
+      "excludedXmlPaths": [],
+      "excludedXsdPaths": [],
+      "malformedXmlPaths": [],
+      "xmlRoots": [],
+      "xsdRoots": []
+    },
+    {
+      "name": "ksef-pdf-generator",
+      "remoteUrl": "https://github.com/CIRFMF/ksef-pdf-generator.git",
+      "defaultHeadUrl": "https://api.github.com/repos/CIRFMF/ksef-pdf-generator/git/ref/heads/main",
+      "defaultHeadTransport": "proxy-disabled public-IP-pinned HTTPS with peer revalidation",
+      "defaultBranch": "main",
+      "pinnedCommit": "1835553940728b8cb88f8b0298da732d56a3d2a5",
+      "currentDefaultHead": "1835553940728b8cb88f8b0298da732d56a3d2a5",
+      "defaultHeadMatchesPin": true,
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-pdf-generator/zip/1835553940728b8cb88f8b0298da732d56a3d2a5",
+        "bytes": 409910,
+        "sha256": "d62b36fe243d5f324f411f75894768a87e5e729e597b765fce9a771df0508e33"
+      },
+      "archiveMemberCount": 298,
+      "fileCount": 274,
+      "totalUncompressedBytes": 1348251,
+      "xmlPaths": [
+        "assets/invoice.xml",
+        "assets/upo.xml"
+      ],
+      "xsdPaths": [],
+      "fa3XmlPaths": [
+        "assets/invoice.xml"
+      ],
+      "fa3XsdPaths": [],
+      "excludedXmlPaths": [
+        "assets/upo.xml"
+      ],
+      "excludedXsdPaths": [],
+      "malformedXmlPaths": [],
+      "xmlRoots": [
+        {
+          "path": "assets/invoice.xml",
+          "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
+          "rootElement": "Faktura"
+        },
+        {
+          "path": "assets/upo.xml",
+          "namespace": "http://upo.schematy.mf.gov.pl/KSeF/v4-3",
+          "rootElement": "Potwierdzenie"
+        }
+      ],
+      "xsdRoots": []
+    },
+    {
+      "name": "ksef-schematy",
+      "remoteUrl": "https://github.com/CIRFMF/ksef-schematy.git",
+      "defaultHeadUrl": "https://api.github.com/repos/CIRFMF/ksef-schematy/git/ref/heads/main",
+      "defaultHeadTransport": "proxy-disabled public-IP-pinned HTTPS with peer revalidation",
+      "defaultBranch": "main",
+      "pinnedCommit": "cd826b831f74f73533ccf26876439ab8d9efdcf5",
+      "currentDefaultHead": "cd826b831f74f73533ccf26876439ab8d9efdcf5",
+      "defaultHeadMatchesPin": true,
+      "archive": {
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-schematy/zip/cd826b831f74f73533ccf26876439ab8d9efdcf5",
+        "bytes": 831,
+        "sha256": "1bf774cba88c631208db9cdba295a6005aebd4636f1fa51016d92e634a071e9a"
+      },
+      "archiveMemberCount": 2,
+      "fileCount": 1,
+      "totalUncompressedBytes": 540,
+      "xmlPaths": [],
+      "xsdPaths": [],
+      "fa3XmlPaths": [],
+      "fa3XsdPaths": [],
+      "excludedXmlPaths": [],
+      "excludedXsdPaths": [],
+      "malformedXmlPaths": [],
+      "xmlRoots": [],
+      "xsdRoots": []
+    }
+  ],
+  "retainedAdjacentXml": {
+    "repository": "ksef-client-csharp",
+    "sourcePath": "KSeF.Client.Tests.Core/Templates/invoice-template-fa-3-pef.xml",
+    "namespace": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+    "rootElement": "Invoice"
+  }
+}
