@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "npm run capture:demo",
+  "evidenceScope": "real Chromium with a standards-shaped injected WebMCP harness; not browser-native API or agent proof",
+  "manifestSha256": "6fa4594228e3d499b304744447021a3a6848422ae2f8eb9e8c7b619489eff10e",
+  "sourceScopeSha256": "403b9e44f9b84dbb6463991129a683832b75e63f1978ee14abd6cf558474be70",
+  "screenshotSha256": "706146c45291388b3bceb963e883426ccc8523126889efa2a48e28e4692dd066",
+  "corpus": {
+    "records": 55,
+    "xml": 45,
+    "xsd": 10,
+    "fa3Xml": 44
+  },
+  "toolNames": [
+    "get_workspace_status",
+    "list_official_assets",
+    "read_official_asset",
+    "select_official_asset",
+    "stage_exact_replacements",
+    "validate_workspace"
+  ],
+  "selectedAssetId": "cirfmf-template-base",
+  "state": "pending-human-approval"
+}
