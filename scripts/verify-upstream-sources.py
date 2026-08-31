@@ -35,6 +35,7 @@ RAW_GITHUB = re.compile(
 CODELOAD_GITHUB = re.compile(
     r"^https://codeload\.github\.com/CIRFMF/([^/]+)/zip/([a-f0-9]{40})$"
 )
+_ARCHIVE_CACHE: dict[str, bytes] = {}
 
 
 def sha256(data: bytes) -> str:
@@ -322,6 +323,11 @@ def read_zip_member(
         )
 
 
+def archive_member_path(repository: str, commit: str, source_path: str) -> str:
+    """Map a raw GitHub source path to its pinned codeload archive member."""
+    return f"{repository}-{commit}/{source_path}"
+
+
 def fetch(
     url: str,
     expected_bytes: int,
@@ -379,6 +385,65 @@ def fetch(
                     break
                 time.sleep(min(1.5 * (attempt + 1), remaining_seconds))
     raise RuntimeError(f"failed to fetch {url}: {last_error}")
+
+
+def fetch_raw_with_archive_fallback(
+    url: str,
+    expected_bytes: int,
+    allowed_urls: set[str],
+    pins: dict[str, str],
+    archive_url: str,
+    archive_expected_bytes: int,
+    archive_sha256: str,
+    source_path: str,
+    fallback_used: list[str] | None = None,
+) -> bytes:
+    """Fetch a pinned raw GitHub resource, falling back to its pinned codeload
+    archive member when the raw endpoint is unavailable (for example, GitHub
+    serving 400 for a submodule-embedded path). The archive URL, byte count,
+    and digest are frozen in the scope ledger, so the fallback remains
+    byte-identical and first-party."""
+    try:
+        return fetch(url, expected_bytes, allowed_urls, pins)
+    except Exception as raw_error:
+        archive = _ARCHIVE_CACHE.get(archive_url)
+        if archive is None:
+            archive = fetch(
+                archive_url,
+                archive_expected_bytes,
+                allowed_urls,
+                pins,
+            )
+            if len(archive) != archive_expected_bytes:
+                raise RuntimeError(
+                    f"{url}: fallback archive expected {archive_expected_bytes} "
+                    f"bytes, received {len(archive)}"
+                ) from raw_error
+            if sha256(archive) != archive_sha256:
+                raise RuntimeError(
+                    f"{url}: fallback archive SHA-256 mismatch"
+                ) from raw_error
+            _ARCHIVE_CACHE[archive_url] = archive
+        with zipfile.ZipFile(io.BytesIO(archive)) as zipped:
+            member_name = archive_member_path(
+                RAW_GITHUB.match(url).group(1),
+                RAW_GITHUB.match(url).group(2),
+                source_path,
+            )
+            try:
+                data = read_zip_member(
+                    zipped,
+                    member_name,
+                    expected_bytes,
+                    url,
+                )
+            except KeyError as error:
+                raise RuntimeError(
+                    f"{url}: fallback archive lacks member {member_name}"
+                ) from error
+        if fallback_used is not None:
+            fallback_used.append(url)
+        return data
 
 
 def assert_resource_bytes(
@@ -478,17 +543,43 @@ def verify(report_path: pathlib.Path | None) -> dict[str, object]:
             )
     urls = sorted(expected_sizes)
     fetched: dict[str, bytes] = {}
+    fallback_used: list[str] = []
+    archive_by_repo = {
+        str(record["name"]): record["archive"]
+        for record in scope["cirfmfRepositories"]
+    }
     with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {
-            executor.submit(
-                fetch,
-                url,
-                expected_sizes[url],
-                allowed_urls,
-                pins,
-            ): url
-            for url in urls
-        }
+        futures = {}
+        for url in urls:
+            match = RAW_GITHUB.match(url)
+            if match:
+                repository = match.group(1)
+                archive = archive_by_repo.get(repository)
+                if archive is not None:
+                    futures[
+                        executor.submit(
+                            fetch_raw_with_archive_fallback,
+                            url,
+                            expected_sizes[url],
+                            allowed_urls,
+                            pins,
+                            str(archive["sourceUrl"]),
+                            int(archive["bytes"]),
+                            str(archive["sha256"]),
+                            urlsplit(url).path.split("/", 4)[4],
+                            fallback_used,
+                        )
+                    ] = url
+                    continue
+            futures[
+                executor.submit(
+                    fetch,
+                    url,
+                    expected_sizes[url],
+                    allowed_urls,
+                    pins,
+                )
+            ] = url
         for future in as_completed(futures):
             url = futures[future]
             try:
@@ -631,6 +722,7 @@ def verify(report_path: pathlib.Path | None) -> dict[str, object]:
             "peerIpRevalidated": True,
             "proxiesDisabled": True,
         },
+        "archiveFallbackUsed": fallback_used,
         "ministryArchiveSha256": archive_sha,
     }
     if report_path is not None:

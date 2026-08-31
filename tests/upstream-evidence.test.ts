@@ -57,6 +57,7 @@ describe("upstream corpus verification evidence", () => {
         peerIpRevalidated: boolean;
         proxiesDisabled: boolean;
       };
+      archiveFallbackUsed: string[];
       ministryArchiveSha256: string;
     };
 
@@ -124,6 +125,9 @@ describe("upstream corpus verification evidence", () => {
         peerIpRevalidated: true,
         proxiesDisabled: true,
       },
+      archiveFallbackUsed: [
+        "https://raw.githubusercontent.com/CIRFMF/ksef-client-csharp/04f01c1c7834336a3aef1804149cd5bcbd883a3e/KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/assets/invoice.xml",
+      ],
       ministryArchiveSha256:
         "41ebd3c57144951c65d68a36fbe433285b5791a86a8bd46cb059503e3f8b1e10",
     });
