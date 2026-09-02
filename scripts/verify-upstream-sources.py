@@ -212,7 +212,6 @@ class PinnedHTTPSHandler(urllib.request.HTTPSHandler):
             PinnedHTTPSConnection,
             request,
             context=self._context,
-            check_hostname=self._check_hostname,
         )
 
 
