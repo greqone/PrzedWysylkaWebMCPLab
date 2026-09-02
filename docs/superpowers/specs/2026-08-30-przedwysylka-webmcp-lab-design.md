@@ -100,6 +100,6 @@ Devpost requires a working live URL, public open-source repository containing `d
 [20] https://github.com/webmachinelearning/webmcp/tree/41d12f057167ccf5954dbcf49d99502cb6c84491  
 [21] https://www.npmjs.com/package/webmcp-types/v/0.1.5  
 [22] https://webmcp.devpost.com/rules
-[23] https://github.com/CIRFMF/ksef-client-java/tree/fd948a3d70c86335a216d988e52c697b59065a4c
+[23] https://github.com/CIRFMF/ksef-client-java/tree/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256
 [24] https://github.com/CIRFMF/ksef-pdf-generator/tree/1835553940728b8cb88f8b0298da732d56a3d2a5
 [25] https://github.com/CIRFMF/ksef-api/tree/93b843d5def041f69fe2a26d0d90a53e9fa9987a

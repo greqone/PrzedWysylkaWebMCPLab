@@ -4,6 +4,7 @@ const eventLabels: Record<WorkspaceEvent["type"], string> = {
   "asset-selected": "Selected",
   "validation-completed": "Validated",
   "proposal-staged": "Staged",
+  "proposal-validation-completed": "Proposal preflight",
   "proposal-approved": "Approved by human",
   "proposal-rejected": "Rejected by human",
 };

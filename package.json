@@ -22,7 +22,8 @@
     "verify:scope": "python scripts/verify-cirfmf-tree-census.py --write-report",
     "verify:upstreams": "python scripts/verify-upstream-sources.py --write-report",
     "test:e2e": "playwright test",
-    "capture:demo": "npm run build && node scripts/capture-demo.mjs"
+    "capture:demo": "npm run build && node scripts/capture-demo.mjs",
+    "smoke:native": "npm run build && node scripts/native-webmcp-smoke.mjs"
   },
   "dependencies": {
     "diff": "9.0.0",

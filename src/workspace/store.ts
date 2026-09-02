@@ -1,8 +1,10 @@
 import { applyExactReplacements } from "./replacements";
+import { sha256Text } from "./sha256";
 import type {
   AssetSelectionContext,
   PendingProposal,
   ValidationContext,
+  ValidationTarget,
   WorkspaceEvent,
   WorkspaceEventType,
   WorkspaceListener,
@@ -14,6 +16,7 @@ export interface WorkspaceStoreOptions {
   now?: () => string;
   createId?: () => string;
   canStageReplacements?: (assetId: string) => boolean;
+  hashContent?: (content: string) => Promise<string | null>;
 }
 
 const initialState: WorkspaceState = {
@@ -26,6 +29,7 @@ const initialState: WorkspaceState = {
   pendingValidation: null,
   pendingProposal: null,
   validation: null,
+  proposalValidation: null,
   history: [],
 };
 
@@ -35,6 +39,7 @@ export function createWorkspaceStore(
   const now = options.now ?? (() => new Date().toISOString());
   const createId = options.createId ?? (() => crypto.randomUUID());
   const canStageReplacements = options.canStageReplacements ?? (() => false);
+  const hashContent = options.hashContent ?? sha256Text;
   const listeners = new Set<WorkspaceListener>();
   let state: WorkspaceState = initialState;
   let assetSelectionOperationId = 0;
@@ -76,11 +81,22 @@ export function createWorkspaceStore(
   }
 
   function isCurrentValidation(context: ValidationContext): boolean {
-    return (
+    const sharedCurrent =
       state.pendingValidation?.operationId === context.operationId &&
       context.assetId === state.selectedAssetId &&
       context.revision === state.revision &&
-      context.documentGeneration === state.documentGeneration
+      context.documentGeneration === state.documentGeneration;
+    if (!sharedCurrent) return false;
+    if (context.target === "approved-draft") {
+      return (
+        context.proposalId === null && context.content === state.draftContent
+      );
+    }
+    return (
+      context.proposalId !== null &&
+      context.proposalId === state.pendingProposal?.id &&
+      context.content === state.pendingProposal.proposedContent &&
+      context.revision === state.pendingProposal.baseRevision
     );
   }
 
@@ -96,6 +112,7 @@ export function createWorkspaceStore(
       pendingValidation: null,
       pendingProposal: null,
       validation: null,
+      proposalValidation: null,
       history: [event("asset-selected", `Selected ${assetId}`)],
     });
   }
@@ -115,7 +132,12 @@ export function createWorkspaceStore(
         assetId,
         operationId: ++assetSelectionOperationId,
       };
-      emit({ ...state, pendingAssetSelection: context });
+      validationOperationId += 1;
+      emit({
+        ...state,
+        pendingAssetSelection: context,
+        pendingValidation: null,
+      });
       return context;
     },
     completeAssetSelection(context, content) {
@@ -129,28 +151,77 @@ export function createWorkspaceStore(
       emit({ ...state, pendingAssetSelection: null });
       return true;
     },
-    startValidation() {
+    startValidation(target: ValidationTarget = "approved-draft") {
       if (!state.selectedAssetId || state.draftContent === null) {
         throw new Error("Select an official XML asset before validation");
       }
       if (state.pendingAssetSelection) {
         throw new Error("Asset selection is in progress");
       }
+      const proposal =
+        target === "pending-proposal" ? state.pendingProposal : null;
+      if (target === "pending-proposal" && !proposal) {
+        throw new Error("Stage a proposal before validating pending changes");
+      }
       const context = {
+        target,
         assetId: state.selectedAssetId,
         revision: state.revision,
         documentGeneration: state.documentGeneration,
         operationId: ++validationOperationId,
+        content: proposal?.proposedContent ?? state.draftContent,
+        proposalId: proposal?.id ?? null,
       };
       emit({ ...state, pendingValidation: context });
       return context;
     },
-    recordValidation(result, context) {
+    async recordValidation(result, context) {
       if (!state.selectedAssetId || state.draftContent === null) {
         throw new Error("Select an official XML asset before validation");
       }
       if (!isCurrentValidation(context)) {
         throw new Error("Validation result is stale");
+      }
+      const contentSha256 = await hashContent(context.content);
+      if (!contentSha256 || !/^[0-9a-f]{64}$/u.test(contentSha256)) {
+        throw new Error("Validation content hash is unavailable");
+      }
+      if (
+        !state.selectedAssetId ||
+        state.draftContent === null ||
+        !isCurrentValidation(context)
+      ) {
+        throw new Error("Validation result is stale");
+      }
+      if (context.target === "pending-proposal") {
+        const proposal = state.pendingProposal;
+        if (!proposal || context.proposalId !== proposal.id) {
+          throw new Error("Validation result is stale");
+        }
+        emit(
+          withEvent(
+            {
+              ...state,
+              pendingValidation: null,
+              proposalValidation: {
+                assetId: context.assetId,
+                proposalId: proposal.id,
+                baseRevision: proposal.baseRevision,
+                documentGeneration: state.documentGeneration,
+                validatedContent: context.content,
+                proposedSha256: contentSha256,
+                result,
+              },
+            },
+            event(
+              "proposal-validation-completed",
+              result.valid
+                ? `Proposal ${proposal.id} is schema-valid`
+                : `Proposal ${proposal.id} has ${result.findings.length} finding(s)`,
+            ),
+          ),
+        );
+        return contentSha256;
       }
       emit(
         withEvent(
@@ -163,6 +234,7 @@ export function createWorkspaceStore(
           ),
         ),
       );
+      return contentSha256;
     },
     cancelValidation(context) {
       if (!isCurrentValidation(context)) return false;
@@ -170,6 +242,9 @@ export function createWorkspaceStore(
       return true;
     },
     stageProposal(input) {
+      if (state.pendingAssetSelection) {
+        throw new Error("Asset selection is in progress");
+      }
       if (state.pendingProposal) {
         throw new Error("Resolve the pending proposal first");
       }
@@ -199,7 +274,7 @@ export function createWorkspaceStore(
       };
       emit(
         withEvent(
-          { ...state, pendingProposal: proposal },
+          { ...state, pendingProposal: proposal, proposalValidation: null },
           event(
             "proposal-staged",
             `${proposal.replacements.length} replacement(s) pending human approval`,
@@ -210,16 +285,32 @@ export function createWorkspaceStore(
     },
     approveProposal(proposalId) {
       const proposal = requireProposal(proposalId);
+      if (state.pendingAssetSelection) {
+        throw new Error("Asset selection is in progress");
+      }
+      const proof = state.proposalValidation;
+      if (
+        !proof ||
+        proof.assetId !== state.selectedAssetId ||
+        proof.proposalId !== proposal.id ||
+        proof.baseRevision !== state.revision ||
+        proof.documentGeneration !== state.documentGeneration ||
+        proof.validatedContent !== proposal.proposedContent ||
+        !proof.result.valid
+      ) {
+        throw new Error("Proposal requires a current valid preflight");
+      }
       emit(
         withEvent(
           {
             ...state,
-            draftContent: proposal.proposedContent,
+            draftContent: proof.validatedContent,
             revision: state.revision + 1,
             documentGeneration: state.documentGeneration + 1,
             pendingValidation: null,
             pendingProposal: null,
             validation: null,
+            proposalValidation: null,
           },
           event("proposal-approved", proposal.summary),
         ),
@@ -227,9 +318,15 @@ export function createWorkspaceStore(
     },
     rejectProposal(proposalId) {
       const proposal = requireProposal(proposalId);
+      if (state.pendingAssetSelection) {
+        throw new Error("Asset selection is in progress");
+      }
+      if (state.pendingValidation?.target === "pending-proposal") {
+        throw new Error("Proposal validation is in progress");
+      }
       emit(
         withEvent(
-          { ...state, pendingProposal: null },
+          { ...state, pendingProposal: null, proposalValidation: null },
           event("proposal-rejected", proposal.summary),
         ),
       );

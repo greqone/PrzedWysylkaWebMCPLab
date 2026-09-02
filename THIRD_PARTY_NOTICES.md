@@ -31,7 +31,7 @@ The frozen corpus includes source records from these exact revisions:
 | Repository                                   | Commit                                     | License and copyright notice                                                                                                                          |
 | -------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | https://github.com/CIRFMF/ksef-client-csharp | `04f01c1c7834336a3aef1804149cd5bcbd883a3e` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-client-csharp/blob/04f01c1c7834336a3aef1804149cd5bcbd883a3e/LICENCE.txt) |
-| https://github.com/CIRFMF/ksef-client-java   | `fd948a3d70c86335a216d988e52c697b59065a4c` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-client-java/blob/fd948a3d70c86335a216d988e52c697b59065a4c/LICENSE.md)    |
+| https://github.com/CIRFMF/ksef-client-java   | `4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-client-java/blob/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/LICENSE.md)    |
 | https://github.com/CIRFMF/ksef-pdf-generator | `1835553940728b8cb88f8b0298da732d56a3d2a5` | [MIT; Copyright © 2025 CIRF](https://github.com/CIRFMF/ksef-pdf-generator/blob/1835553940728b8cb88f8b0298da732d56a3d2a5/LICENSE)                      |
 | https://github.com/CIRFMF/ksef-api           | `93b843d5def041f69fe2a26d0d90a53e9fa9987a` | [MIT; Copyright © 2025 Ministerstwo Finansów](https://github.com/CIRFMF/ksef-api/blob/93b843d5def041f69fe2a26d0d90a53e9fa9987a/LICENSE.txt)           |
 
@@ -46,7 +46,11 @@ Exact byte copies of the upstream notices are retained in the deployed source tr
 
 The C# client's nested PDF-test fixture is byte-identical to the canonical `ksef-pdf-generator` source and is retained as a separate provenance record with `contentDuplicateOf`.
 
-The repository-level MIT notices are evidence of each upstream software repository's declared license. They do not, by themselves, establish separate reuse terms for every official XML fixture or schema. Public redistribution of the bundled official-source corpus remains gated pending confirmation of the applicable MF/CRD terms and asset-level provenance for the PDF-generator XML.
+The repository-level MIT notices establish each upstream software repository's declared license. The Ministry of Finance separately publishes free public-sector-information reuse terms that require source/time attribution and disclosure of processing when no other conditions apply.[14]
+
+The open-data statute supplies the general reuse framework.[13] The CRD and KSeF pages identify the exact schema and example files used here.[15][16]
+
+This repository preserves the full source URLs, frozen dates, unmodified bytes, and Ministry attribution. The PDF-generator file is byte-identical to its MIT-licensed canonical source, as recorded above. MF/CRD reuse terms and PDF-generator provenance are documented; this notice is a provenance record, not legal advice. Public redistribution remains an explicit operator decision.
 
 ## JavaScript dependencies
 
@@ -63,3 +67,10 @@ Development/test dependencies retain the licenses recorded in `package-lock.json
 ## Exact per-file provenance
 
 `data/official-assets.lock.json` is the authoritative machine-readable ledger for source URL, source path, pinned revision, SHA-256, byte count, namespace, and role of every bundled official XML/XSD record.
+
+## Sources
+
+[13] https://eli.gov.pl/api/acts/DU/2023/1524/text.html
+[14] https://www.gov.pl/web/finanse/ponowne-wykorzystywanie
+[15] https://crd.gov.pl/wzor/2025/06/25/13775/
+[16] https://ksef.podatki.gov.pl/pliki-do-pobrania-ksef-20

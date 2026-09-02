@@ -1,45 +1,54 @@
 # PrzedWysylka WebMCP Lab
 
-**A browser-local FA(3) XML workbench where a human and a browser agent inspect official data, run canonical XSD validation, and review exact repairs together.**
+**Agent proposes. Schema proves. Human approves.**
 
-![PrzedWysylka WebMCP Lab showing an invalid official template and a pending human approval](docs/assets/workbench.png)
+PrzedWysylka WebMCP Lab is a browser-local FA(3) XML workbench where a person and a browser agent share the same official source, validator, pending diff, and audit trail. The agent can prepare exact work. It cannot approve, reject, or download anything.
 
-**Evidence scope:** the committed screenshot and automated E2E run real Chromium with a standards-shaped injected WebMCP harness. They prove the app's registration, callback, shared-state, validation, and human-gate behavior; they do not claim to test a browser vendor's native agent implementation.
+![Native Chrome WebMCP evidence: invalid approved draft beside a schema-valid pending proposal and human-only approval controls](docs/assets/native-workbench.png)
 
-[`docs/assets/workbench.capture.json`](docs/assets/workbench.capture.json) binds the screenshot to the exact manifest and PNG SHA-256, corpus totals, six registered tool names, selected asset, and pending-human-approval state.
+This is a production-build native Chrome capture, not a mock or injected API. [`docs/assets/native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json) records Chrome `152.0.7977.64`, `nativeModelContext: true`, `injectedHarness: false`, exactly six tools, an invalid Revision 0, a proposal-bound SHA-256 preflight, an automated Playwright click through the human-only approval control, and a valid Revision 1 with no browser errors. The smoke proves the browser's native registration, callback, and UI-gate paths; it does not claim that a person approved this automated test or that an AI model chose the right tools unaided.
 
-## Why this exists
+> **Publication gate:** the repository does not invent a live deployment or YouTube URL. Those remain explicit operator actions and must be filled in before submission.
 
-Structured tax XML is an unusually good WebMCP problem. A visual browser agent can click through an editor, but it should not have to guess which schema is authoritative, scrape line numbers, or silently rewrite a compliance document. The page already owns that context.
+## 30-second judge path
 
-PrzedWysylka WebMCP Lab exposes six narrow browser-native tools through `document.modelContext.registerTool()`. The agent can discover the complete first-party corpus, inspect bounded source ranges, run the same local validator as the human, and stage exact replacements. **There is no agent-callable approval tool.** The human sees a diff and explicitly approves or rejects it in the UI.
+1. Open the app in the current ChatGPT Desktop built-in browser with GPT-5.6 Sol or GPT-5.6 Terra. GPT-5.6 Luna currently has WebMCP disabled.[5]
+2. Open `Site tools` and expect exactly six tools. Chrome 149+ is the alternative: enable `chrome://flags/#enable-webmcp-testing`, then relaunch.[1][6]
+3. Send the exact prompt below.
+4. Watch Revision 0 fail canonical validation while the pending proposal earns a schema-valid SHA-256 proof.
+5. Click `Approve changes` yourself. Revision 1 is created and validated again.
 
-## The collaboration loop
+## Exact agent prompt
 
-1. Select any official XML or XSD asset.
-2. Validate an FA(3) XML against the canonical four-file CRD closure.
-3. Ask the browser agent to inspect the finding and stage exact replacements.
-4. Review the pending diff. The approved draft is still unchanged.
-5. Approve or reject in the human UI.
-6. Approval creates a new revision and triggers fresh browser-local validation.
-7. Inspect the audit trail and byte-level provenance.
+> Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Validate the pending proposal, but do not approve it.
 
-Try this prompt in ChatGPT Desktop's browser or WebMCP-enabled Chrome:
+## What WebMCP changes
 
-> Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Do not approve them.
+| Without WebMCP                                                                            | With WebMCP                                                                                   |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| The agent scrapes labels, scrolls source, and guesses which schema or revision is active. | Six narrow tools expose the live corpus, selection, validator, proposal, hashes, and history. |
+| A visual edit can silently target the wrong text or stale state.                          | Exact replacements are unique, non-overlapping, atomic, and tied to the current revision.     |
+| "Please do not approve" is only a prompt instruction.                                     | No approval tool exists. Approval is an enabled UI action only after current proposal proof.  |
+| Large source dumps consume model context.                                                 | Lists, excerpts, findings, and history use explicit limits and continuation metadata.         |
+
+## Who this is for
+
+This lab targets developers, accountants, QA teams, and compliance operators who need help with structured regulatory XML but cannot hand final authority to an agent. FA(3) is a sharp example: one wrong value can invalidate a document, the schema closure is authoritative, and the person responsible still needs to see the exact proposed bytes.
+
+The page already owns the source, schema bundle, validator, and revision state. WebMCP exposes those capabilities directly instead of forcing brittle visual automation or duplicating the workflow behind a remote MCP server.[1]
 
 ## WebMCP tool surface
 
-| Tool                       | Effect                                                               | Guardrail                                                |
-| -------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------- |
-| `list_official_assets`     | Returns filtered corpus metadata                                     | Read-only                                                |
-| `read_official_asset`      | Returns at most 120 source lines                                     | Read-only, untrusted-content annotation                  |
-| `select_official_asset`    | Synchronizes the shared UI selection                                 | Loads only a locked official asset                       |
-| `validate_workspace`       | Runs canonical FA(3) validation and mirrors findings into the UI     | Cannot validate XSD or the adjacent UBL fixture as FA(3) |
-| `stage_exact_replacements` | Creates an atomic pending proposal                                   | Exact, unique, non-overlapping matches; never applies    |
-| `get_workspace_status`     | Returns revision, hashes, validation, proposal, and history metadata | Read-only                                                |
+| Tool                       | Effect                                                    | Explicit output boundary                                             |
+| -------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------- |
+| `list_official_assets`     | Lists filtered locked corpus records                      | Up to 6 per page; returns total, offset, `hasMore`, and `nextOffset` |
+| `read_official_asset`      | Reads an official source excerpt                          | Up to 30 lines and 1,500 serialized characters; line/column cursor   |
+| `select_official_asset`    | Synchronizes the shared UI selection                      | One locked asset; never accepts arbitrary paths or bytes             |
+| `validate_workspace`       | Validates the approved draft or exact pending proposal    | Returns full finding count and at most 5 finding objects             |
+| `stage_exact_replacements` | Creates an atomic pending proposal                        | 1–20 exact replacements; never applies them                          |
+| `get_workspace_status`     | Reads revision, hashes, validation, proposal, and history | Returns total history count and the latest 8 events                  |
 
-Tool inputs are validated with Zod because native WebMCP input-schema validation remains experimental. All descriptions are static developer-authored strings. XML returned to an agent is explicitly annotated as untrusted content.
+Tool inputs are checked with Zod in the callback. Descriptions are static developer-authored strings. Official XML is returned as untrusted source data, and read-only tools declare `readOnlyHint`.[3]
 
 ## Complete official corpus
 
@@ -99,9 +108,11 @@ Open the URL printed by Vite.
 
 ### Native WebMCP support
 
-- ChatGPT Desktop's in-app browser supports WebMCP.
-- Chrome 149+ can use the WebMCP testing flag/origin trial described by the challenge.
-- In ordinary browsers, the complete human UI and local validator still work; the header reports `WebMCP unavailable`.
+For ChatGPT, update the desktop app, open the site in its built-in browser, and use GPT-5.6 Sol or GPT-5.6 Terra. GPT-5.6 Luna currently has WebMCP disabled. Open `Site tools` in the address bar, choose `Available site tools`, and expect exactly six tools.[5]
+
+For local Chrome testing, use Chrome 149 or later, open `chrome://flags/#enable-webmcp-testing`, set it to **Enabled**, and relaunch.[1][6]
+
+In ordinary browsers, the complete human UI and browser-local validator still work. The header honestly reports `WebMCP unavailable`; production installs no polyfill.
 
 ## Verification
 
@@ -113,9 +124,14 @@ npm run typecheck
 npm run lint
 npm run build           # production bundle, browser worker, and WASM
 npm run test:e2e        # real Chromium + standards-shaped injected WebMCP harness + Axe
+npm run smoke:native    # production build + system Chrome native modelContext + evidence artifacts
 ```
 
-The automated browser tests do not prove browser-native WebMCP API, permission-policy enforcement, or native-agent compatibility. Before submission, run the final smoke and recording in the actual target environment—ChatGPT Desktop's in-app browser or WebMCP-enabled Chrome—without injecting the test harness.
+`npm run test:e2e` and `npm run capture:demo` use a standards-shaped injected WebMCP harness. They deterministically test registration, callbacks, shared state, the manual fallback, and accessibility, but the injected harness does not prove browser-native WebMCP API, permission, or agent compatibility.
+
+`npm run smoke:native` builds the production app, starts an owned Vite preview, discovers system Chrome (or `WEBMCP_CHROME_PATH`), enables only `WebMCPTesting`, and drives the real `document.modelContext.getTools()` / `executeTool()` path. It invokes all six callbacks, proves there is no approval tool, validates the approved draft and pending proposal, captures the enabled human gate, uses Playwright to click that UI control, waits for valid Revision 1, writes [`native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json), and binds [`native-workbench.png`](docs/assets/native-workbench.png) by SHA-256.
+
+That native smoke proves browser integration and callback behavior, not model planning quality. The final sub-three-minute recording must still show GPT-5.6 Sol or Terra discovering and using the live site's tools without an injected harness.[5][6]
 
 Optional independent native validity-class gate:
 
@@ -147,6 +163,8 @@ To regenerate the committed product screenshot from a fresh local production bui
 npm run capture:demo
 ```
 
+The injected capture remains a deterministic secondary artifact at [`docs/assets/workbench.png`](docs/assets/workbench.png), bound by [`workbench.capture.json`](docs/assets/workbench.capture.json). The native screenshot above is the judge-facing evidence.
+
 ## Architecture
 
 ```text
@@ -175,11 +193,20 @@ See [`docs/architecture.md`](docs/architecture.md) for component boundaries and 
 
 - [`docs/submission.md`](docs/submission.md) — English Devpost copy
 - [`docs/demo-script.md`](docs/demo-script.md) — sub-three-minute video runbook
+- [`docs/assets/native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json) — production native Chrome callback evidence
+- [`docs/assets/native-workbench.png`](docs/assets/native-workbench.png) — native pre-approval evidence frame
 - [`docs/assets/cirfmf-tree-census.json`](docs/assets/cirfmf-tree-census.json) — independent default-tree completeness evidence
 - [`docs/assets/upstream-verification.json`](docs/assets/upstream-verification.json) — live first-party byte replay evidence
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — asset and dependency provenance
 
 The public deployment and final submission remain explicit operator actions.
+
+## Sources
+
+[1] https://developer.chrome.com/docs/ai/webmcp
+[3] https://developer.chrome.com/docs/ai/webmcp/secure-tools
+[5] https://learn.chatgpt.com/docs/webmcp
+[6] https://webmcp.devpost.com/rules
 
 ## License
 

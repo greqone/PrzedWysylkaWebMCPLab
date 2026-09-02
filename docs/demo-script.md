@@ -1,6 +1,6 @@
-# Demo Video Script — target 2:35
+# Demo video script (target 2:35)
 
-The final recording must be under three minutes, in English, with audible narration. Record at 1440×900 or higher in ChatGPT Desktop's in-app browser or Chrome 149+ with WebMCP enabled.
+The final recording must be under three minutes, in English, with audible narration.[6] Record at 1440×900 or higher in the current ChatGPT Desktop built-in browser. Use GPT-5.6 Sol or GPT-5.6 Terra; GPT-5.6 Luna currently has WebMCP disabled.[5]
 
 ## 0:00–0:18 — Problem and product
 
@@ -8,7 +8,7 @@ The final recording must be under three minutes, in English, with audible narrat
 
 **Narration:**
 
-> Structured invoice XML is precise, consequential, and miserable to operate through visual automation. PrzedWysylka WebMCP Lab gives a human and a browser agent one shared, browser-local FA(3) workspace.
+> One bad value can invalidate a structured invoice. PrzedWysylka WebMCP Lab gives a person and a browser agent the same official FA(3) source, canonical validator, pending diff, and audit trail.
 
 Point out:
 
@@ -16,6 +16,8 @@ Point out:
 - 45 XML and 10 XSD source records;
 - browser-local status;
 - six WebMCP tools live.
+
+Open `Site tools` and briefly show exactly six available tools. Keep the app and agent visible together.
 
 ## 0:18–0:38 — First-party corpus and integrity
 
@@ -25,61 +27,68 @@ Point out:
 
 > This is not a hand-picked demo fixture. The repository contains every XML from the Ministry's official FA(3) archive, every FA(3)-namespace XML path from the pinned CIRFMF C#, Java, and PDF-generator snapshots, and every scoped FA(3) XSD source record. All 55 records are byte-locked with upstream provenance.
 
-## 0:38–1:02 — Ask the agent
+## 0:38–1:08 — Ask the agent and expose the bad revision
 
 **Prompt:**
 
-> Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Do not approve them.
+> Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Validate the pending proposal, but do not approve it.
 
 **Narration while tools run:**
 
-> The agent discovers structured page tools instead of scraping controls. It selects the official template and runs the same canonical browser-local validator the UI uses.
+> The agent discovers structured page tools instead of scraping controls. It selects the official template and validates the current approved draft against the same canonical schema closure used by the UI.
 
-Show the `Needs attention` finding for `#nip#`.
+Show `Approved draft validation`, Revision 0, `Needs attention`, and the finding for `#nip#`. Hold long enough for the scope to be readable.
 
-## 1:02–1:32 — Agent stages, but cannot apply
+## 1:08–1:43 — Agent proposes and schema proves
 
-**On screen:** Pending proposal with two replacement cards and diff.
-
-**Narration:**
-
-> The agent reads only the source range it needs and stages two exact replacements. Notice that Revision zero is still unchanged. The agent has no approval tool—this is enforced by the capability surface, not by asking the model to behave.
-
-Briefly show the six tool chips; emphasize that none is named approve/apply/download.
-
-## 1:32–1:55 — Human authority
-
-**On screen:** Click `Approve changes` manually.
+**On screen:** Pending proposal with two replacement cards, diff, and preflight state.
 
 **Narration:**
 
-> I approve in the human interface. That creates Revision one and automatically revalidates it against the four-file canonical CRD closure.
+> The agent reads only the source range it needs and stages two exact replacements. Revision zero is still unchanged, and approval is disabled. The agent now validates the pending proposal itself.
+
+Wait for `Schema valid before approval`. Point to zero findings and the visible SHA-256 prefix. Then show the enabled approval button and the six tool chips; none is an approve, apply, reject, or download tool.
+
+## 1:43–2:03 — Human authority
+
+**On screen:** Keep the proposal proof and buttons visible. Click `Approve changes` manually. Do not cut between proof and click.
+
+**Narration:**
+
+> The schema proof makes this proposal eligible for review, but it does not apply anything. I approve in the human interface. That creates Revision one and validates the approved bytes again against the four-file canonical CRD closure.
 
 Wait for `Schema valid`.
 
-## 1:55–2:18 — Shared evidence
+## 2:03–2:22 — Shared evidence
 
 **On screen:** Audit trail and provenance.
 
 **Narration:**
 
-> The audit trail preserves selection, failed validation, staging, human approval, and the valid new revision. Provenance shows the original source URL, role, namespace, and byte hash. Nothing is sent to an application backend.
+> The audit trail separates the failed Revision zero validation, proposal preflight, staging, human approval, and valid Revision one. Provenance keeps the original source URL, namespace, and byte hash. Nothing is sent to an application backend.
 
-## 2:18–2:35 — Close
+## 2:22–2:35 — Close
 
 **On screen:** Return to full workbench.
 
 **Narration:**
 
-> WebMCP makes the agent faster and more reliable without removing the web interface or the person responsible for the document. The agent does the mechanical work. The human remains the authority.
+> WebMCP removes brittle UI guessing without removing the interface or the person responsible for the document. The agent proposes. The schema proves. The human approves.
 
 ## Recording checklist
 
 - Keep the recording under 3:00; target 2:35.
 - Use only the bundled official fixtures; show no personal/customer XML.
-- Show the WebMCP connected state.
+- Use current ChatGPT Desktop with GPT-5.6 Sol or GPT-5.6 Terra.
+- Show `Site tools`, all six available tools, and the WebMCP connected state.
 - Confirm the connected state comes from the target browser's native `document.modelContext` implementation.
+- Keep Revision 0 invalidity, proposal SHA-256 proof, and the enabled human controls legible.
 - Do not inject the automated WebMCP harness into the final recording; this recording is the manual native-browser smoke.
-- Do not cut between staging and approval; the human click must be visible.
+- Do not cut between proposal preflight and approval; the human click must be visible.
 - Ensure narration is English and no copyrighted music plays.
 - Review the final video for personal information, notifications, bookmarks, and unrelated trademarks before publishing.
+
+## Sources
+
+[5] https://learn.chatgpt.com/docs/webmcp
+[6] https://webmcp.devpost.com/rules

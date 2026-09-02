@@ -7,6 +7,7 @@ interface ValidationPanelProps {
   validating: boolean;
   selectionPending: boolean;
   canStageGuidedRepair: boolean;
+  showManualFallback: boolean;
   hasPendingProposal: boolean;
   onValidate(): void;
   onStageGuidedRepair(): void;
@@ -18,6 +19,7 @@ export function ValidationPanel({
   validating,
   selectionPending,
   canStageGuidedRepair,
+  showManualFallback,
   hasPendingProposal,
   onValidate,
   onStageGuidedRepair,
@@ -39,7 +41,7 @@ export function ValidationPanel({
       <div className="panel-heading compact-heading">
         <div>
           <span className="eyebrow">Canonical CRD closure</span>
-          <h2 id="validation-title">Validation</h2>
+          <h2 id="validation-title">Approved draft validation</h2>
         </div>
         <span className={`result-pill result-pill--${statusClass}`}>
           {status}
@@ -89,14 +91,14 @@ export function ValidationPanel({
         >
           {validating ? "Validating…" : "Validate XML"}
         </button>
-        {canStageGuidedRepair ? (
+        {showManualFallback && canStageGuidedRepair ? (
           <button
             type="button"
             className="button button--ghost"
             onClick={onStageGuidedRepair}
-            disabled={hasPendingProposal}
+            disabled={hasPendingProposal || selectionPending}
           >
-            Stage guided repair
+            Manual demo fallback
           </button>
         ) : null}
       </div>

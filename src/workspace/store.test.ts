@@ -7,6 +7,7 @@ type StoreModule = {
     now?: () => string;
     createId?: () => string;
     canStageReplacements?: (assetId: string) => boolean;
+    hashContent?: (content: string) => Promise<string | null>;
   }): {
     getState(): {
       selectedAssetId: string | null;
@@ -15,6 +16,15 @@ type StoreModule = {
       revision: number;
       documentGeneration: number;
       validation: ValidationResult | null;
+      proposalValidation: null | {
+        assetId: string;
+        proposalId: string;
+        baseRevision: number;
+        documentGeneration: number;
+        validatedContent: string;
+        proposedSha256: string;
+        result: ValidationResult;
+      };
       pendingProposal: null | {
         id: string;
         baseRevision: number;
@@ -35,11 +45,14 @@ type StoreModule = {
       assetId: string;
       operationId: number;
     }): boolean;
-    startValidation(): {
+    startValidation(target?: "approved-draft" | "pending-proposal"): {
+      target: "approved-draft" | "pending-proposal";
       assetId: string;
       revision: number;
       documentGeneration: number;
       operationId: number;
+      content: string;
+      proposalId: string | null;
     };
     cancelValidation(context: {
       assetId: string;
@@ -50,12 +63,15 @@ type StoreModule = {
     recordValidation(
       result: ValidationResult,
       context: {
+        target: "approved-draft" | "pending-proposal";
         assetId: string;
         revision: number;
         documentGeneration: number;
         operationId: number;
+        content: string;
+        proposalId: string | null;
       },
-    ): void;
+    ): Promise<string>;
     stageProposal(input: {
       summary: string;
       replacements: Array<{
@@ -99,6 +115,25 @@ describe("workspace store", () => {
       "<NIP>1111111111</NIP>",
     );
 
+    expect(() => store.approveProposal(proposal.id)).toThrow(
+      "Proposal requires a current valid preflight",
+    );
+    const proofContext = store.startValidation("pending-proposal");
+    expect(proofContext.content).toBe("<NIP>1111111111</NIP>");
+    expect(proofContext.proposalId).toBe(proposal.id);
+    await store.recordValidation(
+      { valid: true, findings: [], rawOutput: "valid" },
+      proofContext,
+    );
+    expect(store.getState().proposalValidation).toMatchObject({
+      assetId: "cirfmf-template-base",
+      proposalId: proposal.id,
+      baseRevision: 0,
+      validatedContent: "<NIP>1111111111</NIP>",
+      proposedSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
+      result: { valid: true },
+    });
+
     store.approveProposal(proposal.id);
 
     expect(store.getState().originalContent).toBe("<NIP>#nip#</NIP>");
@@ -108,8 +143,218 @@ describe("workspace store", () => {
     expect(store.getState().history.map((entry) => entry.type)).toEqual([
       "asset-selected",
       "proposal-staged",
+      "proposal-validation-completed",
       "proposal-approved",
     ]);
+  });
+
+  test("rejects approval when proposed bytes change after preflight", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    store.selectAsset("fixture", "<NIP>#nip#</NIP>");
+    const proposal = store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#nip#", replacement: "1111111111", reason: "Valid NIP" },
+      ],
+    });
+    const context = store.startValidation("pending-proposal");
+    await store.recordValidation(
+      { valid: true, findings: [], rawOutput: "valid" },
+      context,
+    );
+
+    proposal.proposedContent = "<NIP>tampered</NIP>";
+
+    expect(() => store.approveProposal(proposal.id)).toThrow(
+      "Proposal requires a current valid preflight",
+    );
+    expect(store.getState().draftContent).toBe("<NIP>#nip#</NIP>");
+  });
+
+  test("derives proposal SHA-256 from the validated byte snapshot", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    let hashedContent = "";
+    const expectedSha256 = "d".repeat(64);
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+      hashContent: async (content) => {
+        hashedContent = content;
+        return expectedSha256;
+      },
+    });
+    store.selectAsset("fixture", "<NIP>#nip#</NIP>");
+    store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#nip#", replacement: "1111111111", reason: "Valid NIP" },
+      ],
+    });
+    const context = store.startValidation("pending-proposal");
+
+    await store.recordValidation(
+      { valid: true, findings: [], rawOutput: "valid" },
+      context,
+    );
+
+    expect(hashedContent).toBe(context.content);
+    expect(store.getState().proposalValidation?.proposedSha256).toBe(
+      expectedSha256,
+    );
+  });
+
+  test("rejects a malformed digest from the hashing boundary", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+      hashContent: async () => "not-a-sha256",
+    });
+    store.selectAsset("fixture", "#value#");
+    store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#value#", replacement: "ok", reason: "Candidate" },
+      ],
+    });
+    const context = store.startValidation("pending-proposal");
+
+    await expect(
+      store.recordValidation(
+        { valid: true, findings: [], rawOutput: "valid" },
+        context,
+      ),
+    ).rejects.toThrow("Validation content hash is unavailable");
+    expect(store.getState().proposalValidation).toBeNull();
+  });
+
+  test("rejects proof when workspace changes while hashing is pending", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    let resolveHash!: (value: string) => void;
+    const hash = new Promise<string>((resolve) => {
+      resolveHash = resolve;
+    });
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+      hashContent: async () => hash,
+    });
+    store.selectAsset("fixture", "#value#");
+    store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#value#", replacement: "ok", reason: "Candidate" },
+      ],
+    });
+    const context = store.startValidation("pending-proposal");
+    const recording = store.recordValidation(
+      { valid: true, findings: [], rawOutput: "valid" },
+      context,
+    );
+
+    store.beginAssetSelection("other-fixture");
+    resolveHash("e".repeat(64));
+
+    await expect(recording).rejects.toThrow("Validation result is stale");
+    expect(store.getState().proposalValidation).toBeNull();
+  });
+
+  test("blocks approval and invalidates validation while asset selection is pending", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    store.selectAsset("fixture", "#value#");
+    const proposal = store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#value#", replacement: "ok", reason: "Valid candidate" },
+      ],
+    });
+    const context = store.startValidation("pending-proposal");
+    const selection = store.beginAssetSelection("other-fixture");
+
+    await expect(
+      store.recordValidation(
+        { valid: true, findings: [], rawOutput: "stale" },
+        context,
+      ),
+    ).rejects.toThrow("Validation result is stale");
+    expect(() => store.approveProposal(proposal.id)).toThrow(
+      "Asset selection is in progress",
+    );
+    expect(() => store.rejectProposal(proposal.id)).toThrow(
+      "Asset selection is in progress",
+    );
+
+    expect(store.cancelAssetSelection(selection)).toBe(true);
+    const freshContext = store.startValidation("pending-proposal");
+    await store.recordValidation(
+      { valid: true, findings: [], rawOutput: "fresh" },
+      freshContext,
+    );
+    store.approveProposal(proposal.id);
+    expect(store.getState().draftContent).toBe("ok");
+  });
+
+  test("blocks proposal staging while asset selection is pending", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    store.selectAsset("fixture", "#value#");
+    store.beginAssetSelection("other-fixture");
+
+    expect(() =>
+      store.stageProposal({
+        summary: "Candidate",
+        replacements: [
+          { search: "#value#", replacement: "ok", reason: "Candidate" },
+        ],
+      }),
+    ).toThrow("Asset selection is in progress");
+    expect(store.getState().pendingProposal).toBeNull();
+  });
+
+  test("blocks rejection while proposal validation is pending", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    store.selectAsset("fixture", "#value#");
+    const proposal = store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#value#", replacement: "ok", reason: "Candidate" },
+      ],
+    });
+    store.startValidation("pending-proposal");
+
+    expect(() => store.rejectProposal(proposal.id)).toThrow(
+      "Proposal validation is in progress",
+    );
+    expect(store.getState().pendingProposal?.id).toBe(proposal.id);
   });
 
   test("fails closed when the selected asset is not mutation-eligible", async () => {
@@ -133,6 +378,81 @@ describe("workspace store", () => {
     expect(store.getState().pendingProposal).toBeNull();
   });
 
+  test("blocks approval after an invalid proposal preflight", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    store.selectAsset("fixture", "<Faktura>#value#</Faktura>");
+    const proposal = store.stageProposal({
+      summary: "Invalid candidate",
+      replacements: [
+        { search: "#value#", replacement: "bad", reason: "Exercise proof" },
+      ],
+    });
+    const context = store.startValidation("pending-proposal");
+    await store.recordValidation(
+      {
+        valid: false,
+        findings: [
+          {
+            fileName: "fixture.xml",
+            line: 1,
+            message: "invalid",
+            raw: "invalid",
+          },
+        ],
+        rawOutput: "invalid",
+      },
+      context,
+    );
+
+    expect(() => store.approveProposal(proposal.id)).toThrow(
+      "Proposal requires a current valid preflight",
+    );
+    expect(store.getState().draftContent).toBe("<Faktura>#value#</Faktura>");
+    expect(store.getState().proposalValidation?.result.valid).toBe(false);
+  });
+
+  test("accepts only the latest proposal preflight and clears proof on rejection", async () => {
+    const module = await loadStore();
+    expect(module, "workspace store module must exist").not.toBeNull();
+    if (!module) return;
+
+    const store = module.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    store.selectAsset("fixture", "#value#");
+    const proposal = store.stageProposal({
+      summary: "Candidate",
+      replacements: [
+        { search: "#value#", replacement: "ok", reason: "Exercise staleness" },
+      ],
+    });
+    const older = store.startValidation("pending-proposal");
+    const newer = store.startValidation("pending-proposal");
+
+    await expect(
+      store.recordValidation(
+        { valid: true, findings: [], rawOutput: "older" },
+        older,
+      ),
+    ).rejects.toThrow("Validation result is stale");
+    await store.recordValidation(
+      { valid: true, findings: [], rawOutput: "newer" },
+      newer,
+    );
+    expect(store.getState().proposalValidation?.proposedSha256).toMatch(
+      /^[0-9a-f]{64}$/u,
+    );
+
+    store.rejectProposal(proposal.id);
+    expect(store.getState().proposalValidation).toBeNull();
+  });
+
   test("rejects a validation result after an A to B to A selection cycle", async () => {
     const module = await loadStore();
     expect(module, "workspace store module must exist").not.toBeNull();
@@ -144,12 +464,12 @@ describe("workspace store", () => {
     store.selectAsset("asset-b", "<B/>");
     store.selectAsset("asset-a", "<A/>");
 
-    expect(() =>
+    await expect(
       store.recordValidation(
         { valid: true, findings: [], rawOutput: "" },
         staleContext,
       ),
-    ).toThrow("Validation result is stale");
+    ).rejects.toThrow("Validation result is stale");
     expect(store.getState().selectedAssetId).toBe("asset-a");
     expect(store.getState().validation).toBeNull();
   });
@@ -164,13 +484,13 @@ describe("workspace store", () => {
     const older = store.startValidation();
     const newer = store.startValidation();
 
-    expect(() =>
+    await expect(
       store.recordValidation(
         { valid: false, findings: [], rawOutput: "older" },
         older,
       ),
-    ).toThrow("Validation result is stale");
-    store.recordValidation(
+    ).rejects.toThrow("Validation result is stale");
+    await store.recordValidation(
       { valid: true, findings: [], rawOutput: "newer" },
       newer,
     );

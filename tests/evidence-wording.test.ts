@@ -46,6 +46,59 @@ describe("evidence wording", () => {
     );
   });
 
+  test("documents the native proof-carrying judge path and current clients", () => {
+    const readme = readFileSync(resolve(root, "README.md"), "utf8");
+    const submission = readFileSync(
+      resolve(root, "docs/submission.md"),
+      "utf8",
+    );
+    const demoScript = readFileSync(
+      resolve(root, "docs/demo-script.md"),
+      "utf8",
+    );
+    const architecture = readFileSync(
+      resolve(root, "docs/architecture.md"),
+      "utf8",
+    );
+    const exactPrompt =
+      "Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Validate the pending proposal, but do not approve it.";
+
+    expect(readme).toContain(
+      "**Agent proposes. Schema proves. Human approves.**",
+    );
+    expect(readme).toContain("docs/assets/native-workbench.png");
+    expect(readme).toContain("docs/assets/native-webmcp-smoke.json");
+    expect(readme).toContain("## 30-second judge path");
+    expect(readme).toContain(exactPrompt);
+    expect(readme).toMatch(/\|\s*Without WebMCP\s*\|\s*With WebMCP\s*\|/u);
+    expect(readme).toContain("GPT-5.6 Sol or GPT-5.6 Terra");
+    expect(readme).toContain("GPT-5.6 Luna currently has WebMCP disabled");
+    expect(readme).toContain("chrome://flags/#enable-webmcp-testing");
+    expect(readme).toContain("expect exactly six tools");
+
+    expect(submission).toContain("proof-bound native Chrome smoke");
+    expect(submission).toContain("schema-valid SHA-256 proof");
+    expect(submission).toContain(
+      "store derives SHA-256 from the validated-content snapshot",
+    );
+    expect(submission).toContain("1,500-character serialized payload");
+    expect(submission).toContain(
+      "automated Playwright click through the human-only control",
+    );
+    expect(submission).not.toContain("performs a human UI click");
+    expect(submission).toContain("Revision 1 validates again");
+
+    expect(demoScript).toContain(exactPrompt);
+    expect(demoScript.indexOf("Validate the pending proposal")).toBeLessThan(
+      demoScript.indexOf("Click `Approve changes` manually"),
+    );
+
+    for (const binding of ["proposalId", "baseRevision", "proposedSha256"]) {
+      expect(architecture).toContain(binding);
+    }
+    expect(architecture).toContain("invalidates the proof");
+  });
+
   test("keeps public corpus claims aligned with the 55-record frozen inventory", () => {
     const corpusFiles = [
       "README.md",

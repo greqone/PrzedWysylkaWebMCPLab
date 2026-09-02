@@ -14,6 +14,32 @@ function runScript(...args: string[]) {
   });
 }
 
+function checkPinnedHandlerCompatibility() {
+  const probe = [
+    "import importlib.util, sys, urllib.request",
+    "sys.dont_write_bytecode = True",
+    "spec = importlib.util.spec_from_file_location('upstream_verifier', sys.argv[1])",
+    "module = importlib.util.module_from_spec(spec)",
+    "spec.loader.exec_module(module)",
+    "handler = module.PinnedHTTPSHandler()",
+    "if hasattr(handler, '_check_hostname'): delattr(handler, '_check_hostname')",
+    "captured = {}",
+    "def fake_do_open(connection_class, request, **kwargs):",
+    "    captured.update(connection_class=connection_class, request=request, kwargs=kwargs)",
+    "    return 'opened'",
+    "handler.do_open = fake_do_open",
+    "request = urllib.request.Request('https://example.com/')",
+    "assert handler.https_open(request) == 'opened'",
+    "assert captured['connection_class'] is module.PinnedHTTPSConnection",
+    "assert captured['request'] is request",
+    "assert captured['kwargs'] == {'context': handler._context}",
+  ].join("\n");
+  return spawnSync(python, ["-c", probe, script], {
+    cwd: root,
+    encoding: "utf8",
+  });
+}
+
 function checkUrl(url: string) {
   return runScript("--check-url", url);
 }
@@ -112,5 +138,10 @@ describe("upstream verifier URL policy", () => {
     expect(result.stdout).toContain(
       "pinned-destination, private-resolution, private-peer",
     );
+  });
+
+  test("does not depend on Python-version-private HTTPS handler state", () => {
+    const result = checkPinnedHandlerCompatibility();
+    expect(result.status, result.stderr).toBe(0);
   });
 });

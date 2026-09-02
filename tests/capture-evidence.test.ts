@@ -32,6 +32,12 @@ describe("capture evidence provenance", () => {
       toolNames: string[];
       selectedAssetId: string;
       state: string;
+      proposalPreflight: {
+        valid: boolean;
+        findingCount: number;
+        contentSha256: string;
+      };
+      approvalEnabled: boolean;
     };
 
     expect(evidence).toEqual({
@@ -52,7 +58,13 @@ describe("capture evidence provenance", () => {
         "validate_workspace",
       ],
       selectedAssetId: "cirfmf-template-base",
-      state: "pending-human-approval",
+      state: "proposal-preflight-valid",
+      proposalPreflight: {
+        valid: true,
+        findingCount: 0,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      },
+      approvalEnabled: true,
     });
   });
 });

@@ -17,6 +17,8 @@ flowchart LR
   M[document.modelContext] <--> T[Six WebMCP tools]
   T <--> W
   T --> R
+  T --> V
+  W --> P[Proposal proof: ID + revision + generation + SHA-256]
   H[Human approval controls] --> W
 ```
 
@@ -51,21 +53,28 @@ Invalid documents resolve to `valid: false`. Schema/runtime failures reject. The
 - monotonically increasing revision;
 - monotonically increasing document generation across selection and approval;
 - latest-wins selection and validation operation tokens;
-- last validation result;
+- last approved-draft validation result;
 - at most one pending proposal;
+- at most one pending-proposal validation proof;
 - visible audit events.
 
-A proposal is computed atomically against a base revision. Searches must be non-empty, appear exactly once, and not overlap. The store defaults to denying proposals and requires a registry-backed policy to mark the selected asset as an FA(3) XML document; caller-only XSD/UBL checks are defense in depth. Approval checks both proposal ID and base revision before mutating the approved draft.
+A proposal is computed atomically against a base revision. Searches must be non-empty, appear exactly once, and not overlap. The store defaults to denying proposals and requires a registry-backed policy to mark the selected asset as an FA(3) XML document; caller-only XSD/UBL checks are defense in depth.
+
+Validation has two explicit targets: `approved-draft` and `pending-proposal`. A pending-proposal operation snapshots the proposed content together with its asset ID, `proposalId`, `baseRevision`, document generation, and latest-operation token. After canonical validation, the store hashes those exact bytes through its trusted SHA-256 boundary, rechecks the operation token after the asynchronous digest, and records a `ProposalValidationProof` containing the asset ID, `proposalId`, `baseRevision`, document generation, the validated-content snapshot, `proposedSha256`, and the result. A malformed digest or stale operation cannot write proof.
+
+Approval requires the current asset ID, proposal ID, revision, document generation, a valid proof, and byte-for-byte equality between the pending proposal and the validated-content snapshot. The store applies that snapshot rather than rereading mutable proposal state. Beginning another asset selection cancels any in-flight validation and blocks staging or approval; completing selection, staging a different proposal, rejecting, or approving invalidates the proof. Approval then creates the next document generation, clears both validation states, and triggers a separate validation of the newly approved bytes from the React orchestration layer.
 
 ### WebMCP bridge
 
-`src/webmcp/register-tools.ts` registers exactly six tools using `document.modelContext.registerTool()`. Read-only and state-changing tools declare `readOnlyHint` explicitly; validation diagnostics are marked untrusted. One `AbortController` owns their lifecycle, and aborting it unregisters every successful partial registration through the WebMCP signal contract if any registration fails.
+`src/webmcp/register-tools.ts` registers exactly six tools using `document.modelContext.registerTool()`. Read-only and state-changing tools declare `readOnlyHint` explicitly; validation diagnostics are marked untrusted. One `AbortController` owns their lifecycle, and aborting it unregisters every successful partial registration through the WebMCP signal contract if any registration fails. The callback accepts a browser-provided cancellation signal when present and creates a local signal when the native caller omits the optional execution-options argument.
+
+`validate_workspace` routes both validation targets through the same canonical adapter. For a pending proposal it returns `proposalId`, SHA-256, validity, full finding count, and a bounded finding page while persisting the proof into shared UI state. List, finding, and history responses expose explicit totals and continuation metadata. Source reads additionally enforce a 1,500-character serialized payload ceiling and return a line-and-column cursor, so even a single minified XML/XSD line remains completely reachable rather than silently truncated.
 
 The bridge deliberately omits approval, rejection, download, arbitrary file upload, network access, and KSeF submission. The agent can stage work; only the human UI can cross the approval boundary.
 
-The API is feature-detected. Tests inject a standards-shaped `ModelContext` harness before page load; production never installs a fallback API.
+The API is feature-detected. Deterministic E2E tests inject a standards-shaped `ModelContext` harness before page load; production never installs a fallback API. A separate production-build smoke launches system Chrome with `WebMCPTesting` and drives native `getTools()` / `executeTool()` without that harness.[1][2]
 
-The official WebMCP explainer defines the Permissions Policy feature as [`tools`](https://github.com/webmachinelearning/webmcp#permissions-policy-and-iframes): top-level windows and same-origin frames are enabled by default, `allow="tools"` delegates access to a frame, and `Permissions-Policy: tools=()` disables it. Production therefore uses `tools=(self)`, preserving this top-level same-origin workbench while refusing cross-origin delegation.
+WebMCP requires an origin-isolated document and uses the `tools` Permissions Policy, which defaults to same-origin access.[1] Production sends `Origin-Agent-Cluster: ?1` and `Permissions-Policy: tools=(self)`, preserving this top-level workbench while refusing cross-origin delegation.
 
 ### React workbench
 
@@ -73,7 +82,7 @@ The UI consumes the same store and domain functions as WebMCP callbacks. There i
 
 - Left: complete first-party corpus and provenance-aware selection.
 - Center: escaped source text and approved revision.
-- Right: validation, pending proposal diff, human controls, audit trail, provenance.
+- Right: explicitly scoped approved-draft validation, proposal SHA-256 preflight, pending diff, human controls, audit trail, and provenance.
 
 ## Threat controls
 
@@ -83,6 +92,7 @@ The UI consumes the same store and domain functions as WebMCP callbacks. There i
 | Agent silently mutates a document | Tools can stage only; no approval tool exists                                   |
 | Ambiguous search/replace          | Every search must appear exactly once and all ranges must be non-overlapping    |
 | Stale proposal                    | Proposal ID and base revision are checked at approval                           |
+| Stale or mismatched proof         | ID, revision, generation, and valid result must match the current proposal      |
 | Stale asynchronous selection      | Latest-wins operation token rejects out-of-order load completion                |
 | Stale/concurrent validation       | Document generation plus latest operation token reject older results            |
 | Schema substitution               | Canonical schema IDs and all source hashes are locked                           |
@@ -103,4 +113,9 @@ Vite emits a static SPA containing:
 - the libxml2 WASM binary;
 - all locked XML/XSD assets.
 
-Source maps are disabled. Production headers restrict scripts, workers, frames, forms, object embedding, and browser capabilities.
+Source maps are disabled. Production headers restrict scripts, workers, frames, forms, object embedding, and browser capabilities; the top-level document is origin-isolated for WebMCP.
+
+## Sources
+
+[1] https://developer.chrome.com/docs/ai/webmcp
+[2] https://developer.chrome.com/docs/ai/webmcp/imperative-api

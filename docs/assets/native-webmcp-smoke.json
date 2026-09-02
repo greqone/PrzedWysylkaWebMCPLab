@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "npm run smoke:native",
+  "chromeVersion": "152.0.7977.64",
+  "featureFlag": "WebMCPTesting",
+  "nativeModelContext": true,
+  "injectedHarness": false,
+  "toolCount": 6,
+  "toolNames": [
+    "get_workspace_status",
+    "list_official_assets",
+    "read_official_asset",
+    "select_official_asset",
+    "stage_exact_replacements",
+    "validate_workspace"
+  ],
+  "hasAgentApprovalTool": false,
+  "catalog": {
+    "total": 55,
+    "returned": 6,
+    "hasMore": true
+  },
+  "excerpt": {
+    "startLine": 1,
+    "endLine": 5,
+    "truncated": true
+  },
+  "before": {
+    "valid": false,
+    "revision": 0,
+    "findingCount": 1
+  },
+  "proposalPreflight": {
+    "valid": true,
+    "proposalId": "a4cee4d9-ccfa-4afd-83f6-9ae335d78824",
+    "baseRevision": 0,
+    "contentSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
+    "findingCount": 0
+  },
+  "approval": {
+    "disabledBeforePreflight": true,
+    "enabledAfterPreflight": true,
+    "performedBy": "playwright-ui-click"
+  },
+  "after": {
+    "valid": true,
+    "revision": 1,
+    "pendingProposal": null,
+    "draftSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"
+  },
+  "screenshotSha256": "b5c6fcbaf589bbd39b961c0356afadc916fc3effa383dff2f583bc4f1dc63157",
+  "runtimeErrors": []
+}
