@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "generatedBy": "npm run capture:demo",
   "evidenceScope": "real Chromium with a standards-shaped injected WebMCP harness; not browser-native API or agent proof",
-  "manifestSha256": "6fa4594228e3d499b304744447021a3a6848422ae2f8eb9e8c7b619489eff10e",
-  "sourceScopeSha256": "403b9e44f9b84dbb6463991129a683832b75e63f1978ee14abd6cf558474be70",
-  "screenshotSha256": "706146c45291388b3bceb963e883426ccc8523126889efa2a48e28e4692dd066",
+  "manifestSha256": "eb4464501adc0e924377ccd6101d9d7aa509530edd7640ce38e91c9a288ea877",
+  "sourceScopeSha256": "5a9e1528f27928389eef34894ef8c2e90f3c8f650558d059a404fb92cec4f371",
+  "screenshotSha256": "8bc793710a2a0ae1e91a02b8b200e1d99170e753beb7a952cdb0d778567dbcdd",
   "corpus": {
     "records": 55,
     "xml": 45,
@@ -20,5 +20,11 @@
     "validate_workspace"
   ],
   "selectedAssetId": "cirfmf-template-base",
-  "state": "pending-human-approval"
+  "state": "proposal-preflight-valid",
+  "proposalPreflight": {
+    "valid": true,
+    "findingCount": 0,
+    "contentSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"
+  },
+  "approvalEnabled": true
 }

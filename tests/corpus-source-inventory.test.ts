@@ -26,7 +26,7 @@ const manifest = JSON.parse(
 
 const pins = {
   "ksef-client-csharp": "04f01c1c7834336a3aef1804149cd5bcbd883a3e",
-  "ksef-client-java": "fd948a3d70c86335a216d988e52c697b59065a4c",
+  "ksef-client-java": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
   "ksef-pdf-generator": "1835553940728b8cb88f8b0298da732d56a3d2a5",
   "ksef-api": "93b843d5def041f69fe2a26d0d90a53e9fa9987a",
 } as const;
@@ -120,7 +120,7 @@ describe("frozen first-party FA(3) source inventory", () => {
     };
 
     expect(scope.schemaVersion).toBe(1);
-    expect(scope.observedAt).toBe("2026-08-31");
+    expect(scope.observedAt).toBe("2026-09-02");
     expect(scope.unrestrictedHistoryIncluded).toBe(false);
     expect(scope.totals).toEqual({
       sourceRecords: 55,
@@ -146,7 +146,7 @@ describe("frozen first-party FA(3) source inventory", () => {
       },
       {
         name: "ksef-client-java",
-        commit: "fd948a3d70c86335a216d988e52c697b59065a4c",
+        commit: "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
         fa3XmlSourceRecords: 5,
         fa3XsdSourceRecords: 0,
       },
@@ -220,9 +220,9 @@ describe("frozen first-party FA(3) source inventory", () => {
       },
       {
         repository: "ksef-client-java",
-        commit: "fd948a3d70c86335a216d988e52c697b59065a4c",
+        commit: "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
         sourceUrl:
-          "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/LICENSE.md",
+          "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/LICENSE.md",
         localPath: "public/third-party/cirfmf/ksef-client-java/LICENSE.md",
         bytes: 1071,
         sha256:

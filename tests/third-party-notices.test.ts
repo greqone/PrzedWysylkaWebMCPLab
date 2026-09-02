@@ -48,7 +48,7 @@ describe("third-party source notices", () => {
     expect(prettierIgnore).toContain("public/third-party/");
   });
 
-  test("links local notices and keeps public redistribution explicitly gated", () => {
+  test("links local notices and keeps publication as an operator gate", () => {
     const thirdParty = readFileSync(
       resolve(root, "THIRD_PARTY_NOTICES.md"),
       "utf8",
@@ -65,6 +65,14 @@ describe("third-party source notices", () => {
       "does not state that these materials are public domain",
     );
     expect(adjacent).toContain("No endorsement");
-    expect(adjacent).toContain("public redistribution remains a separate gate");
+    expect(thirdParty).toContain(
+      "MF/CRD reuse terms and PDF-generator provenance are documented",
+    );
+    expect(adjacent).toContain(
+      "Public redistribution remains a separate operator-approval gate",
+    );
+    for (const content of [thirdParty, adjacent]) {
+      expect(content).not.toMatch(/pending confirmation|until .* confirmed/iu);
+    }
   });
 });

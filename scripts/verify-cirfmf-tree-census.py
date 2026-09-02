@@ -81,12 +81,12 @@ EXPECTED_REPOSITORY_SNAPSHOTS = [
     },
     {
         "name": "ksef-client-java",
-        "commit": "fd948a3d70c86335a216d988e52c697b59065a4c",
+        "commit": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
         "defaultBranch": "main",
         "archive": {
-            "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-java/zip/fd948a3d70c86335a216d988e52c697b59065a4c",
-            "bytes": 932_858,
-            "sha256": "43266d022764de1c003870c7d4fedf194978fe7a5733eaa92cf2a7241d3c318c",
+            "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-java/zip/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
+            "bytes": 969_432,
+            "sha256": "7cc9898568a33b107d9893d8b7f236d34beeaad7c42555f5bd487cb639b33a4b",
         },
         "fa3XmlSourceRecords": 5,
         "fa3XsdSourceRecords": 0,

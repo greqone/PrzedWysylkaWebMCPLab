@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-08-31",
+  "observedAt": "2026-09-02",
   "completenessDefinition": "Every XML member in the pinned Ministry of Finance FA(3) examples archive; every XML source path whose document root uses the canonical FA(3) 13775 namespace in the pinned default-branch commits of all six public CIRFMF repositories; the retained adjacent UBL record; the canonical CRD FA(3) root and transitive XSD closure; and every XSD source path directly under the FA schema set in the pinned CIRFMF ksef-api commit.",
   "unrestrictedHistoryIncluded": false,
   "ministryArchive": {
@@ -41,12 +41,12 @@
     },
     {
       "name": "ksef-client-java",
-      "commit": "fd948a3d70c86335a216d988e52c697b59065a4c",
+      "commit": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
       "defaultBranch": "main",
       "archive": {
-        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-java/zip/fd948a3d70c86335a216d988e52c697b59065a4c",
-        "bytes": 932858,
-        "sha256": "43266d022764de1c003870c7d4fedf194978fe7a5733eaa92cf2a7241d3c318c"
+        "sourceUrl": "https://codeload.github.com/CIRFMF/ksef-client-java/zip/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
+        "bytes": 969432,
+        "sha256": "7cc9898568a33b107d9893d8b7f236d34beeaad7c42555f5bd487cb639b33a4b"
       },
       "fa3XmlSourceRecords": 5,
       "fa3XsdSourceRecords": 0
@@ -124,8 +124,8 @@
     },
     {
       "repository": "ksef-client-java",
-      "commit": "fd948a3d70c86335a216d988e52c697b59065a4c",
-      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/LICENSE.md",
+      "commit": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
+      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/LICENSE.md",
       "localPath": "public/third-party/cirfmf/ksef-client-java/LICENSE.md",
       "bytes": 1071,
       "sha256": "00ffc6c7dc0b326af520702bb3f2486d5b5d55da83a8bbf75d80a685da079612"

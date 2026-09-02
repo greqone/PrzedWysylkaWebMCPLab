@@ -118,7 +118,7 @@ describe("independent CIRFMF default-branch tree census", () => {
 
     expect(report).toMatchObject({
       schemaVersion: 1,
-      observedAt: "2026-08-31",
+      observedAt: "2026-09-02",
       censusMethod:
         "immutable codeload archives plus public-IP-pinned GitHub REST heads; verifier-owned repository snapshots and XML/XSD rules independent of the asset manifest and scope ledger",
       manifestSha256: sha256(manifestBytes),

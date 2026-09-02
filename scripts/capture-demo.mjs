@@ -168,7 +168,7 @@ try {
     );
   }
 
-  await page.evaluate(async () => {
+  const proposalPreflight = await page.evaluate(async () => {
     const harness = globalThis.__webMcpCaptureHarness;
     await harness.execute("select_official_asset", {
       assetId: "cirfmf-template-base",
@@ -189,9 +189,22 @@ try {
         },
       ],
     });
+    const result = await harness.execute("validate_workspace", {
+      target: "pending-proposal",
+    });
+    return JSON.parse(result.content[0]?.text ?? "null");
   });
   await page.getByText("Needs attention").waitFor();
   await page.getByRole("heading", { name: "Pending human approval" }).waitFor();
+  await page
+    .getByText("Schema valid before approval", { exact: true })
+    .waitFor();
+  const approvalEnabled = await page
+    .getByRole("button", { name: "Approve changes" })
+    .isEnabled();
+  if (!approvalEnabled) {
+    throw new Error("Human approval did not unlock after proposal preflight");
+  }
   const screenshotBytes = await page.screenshot({ fullPage: true });
 
   if (errors.length) {
@@ -224,7 +237,13 @@ try {
     },
     toolNames: registeredNames,
     selectedAssetId: "cirfmf-template-base",
-    state: "pending-human-approval",
+    state: "proposal-preflight-valid",
+    proposalPreflight: {
+      valid: proposalPreflight.valid,
+      findingCount: proposalPreflight.findingCount,
+      contentSha256: proposalPreflight.contentSha256,
+    },
+    approvalEnabled,
   };
   await writeFile(output, screenshotBytes);
   await writeFile(evidenceOutput, `${JSON.stringify(evidence, null, 2)}\n`);

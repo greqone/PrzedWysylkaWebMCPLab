@@ -50,4 +50,20 @@ describe("production security headers", () => {
     expect(policy).toContain("form-action 'none'");
     expect(policy).toContain("frame-ancestors 'none'");
   });
+
+  test("origin-isolates WebMCP and serves a local favicon", async () => {
+    const [config, document, favicon] = await Promise.all([
+      readFile(resolve("netlify.toml"), "utf8"),
+      readFile(resolve("index.html"), "utf8"),
+      readFile(resolve("public/favicon.svg"), "utf8").catch(() => null),
+    ]);
+
+    expect(config).toContain('Origin-Agent-Cluster = "?1"');
+    expect(document).toContain(
+      '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />',
+    );
+    expect(favicon).not.toBeNull();
+    expect(favicon).toContain("<svg");
+    expect(favicon).toContain("PW");
+  });
 });

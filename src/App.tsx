@@ -14,7 +14,7 @@ import {
   loadAssetText,
 } from "./assets/registry";
 import type { AssetRecord } from "./assets/types";
-import { AgentGuide } from "./components/AgentGuide";
+import { AGENT_PROMPT, AgentGuide } from "./components/AgentGuide";
 import { AppHeader } from "./components/AppHeader";
 import { AssetLibrary } from "./components/AssetLibrary";
 import { HistoryPanel } from "./components/HistoryPanel";
@@ -30,7 +30,7 @@ import {
 } from "./validation/validator";
 import { registerWebMcpTools } from "./webmcp/register-tools";
 import { createWorkspaceStore } from "./workspace/store";
-import type { WorkspaceStore } from "./workspace/types";
+import type { ValidationTarget, WorkspaceStore } from "./workspace/types";
 
 const DEFAULT_ASSET_ID = "cirfmf-template-base";
 const assets = listAssets();
@@ -104,28 +104,34 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
     [loadText, store],
   );
 
-  const runValidation = useCallback(async () => {
-    const current = store.getState();
-    if (!current.selectedAssetId || current.draftContent === null) return;
-    const asset = getAsset(current.selectedAssetId);
-    if (asset.kind !== "xml" || asset.role === "related-ubl") return;
+  const runValidation = useCallback(
+    async (target: ValidationTarget = "approved-draft") => {
+      const current = store.getState();
+      if (!current.selectedAssetId || current.draftContent === null) return;
+      const asset = getAsset(current.selectedAssetId);
+      if (asset.kind !== "xml" || asset.role === "related-ubl") return;
 
-    setError(null);
-    const controller = new AbortController();
-    const validationContext = store.startValidation();
-    try {
-      const result = await validateCurrent(
-        current.draftContent,
-        `${asset.id}.xml`,
-        controller.signal,
-      );
-      store.recordValidation(result, validationContext);
-    } catch (validationError) {
-      if (store.cancelValidation(validationContext)) {
-        setError(messageOf(validationError));
+      setError(null);
+      const controller = new AbortController();
+      let validationContext: ReturnType<
+        WorkspaceStore["startValidation"]
+      > | null = null;
+      try {
+        validationContext = store.startValidation(target);
+        const result = await validateCurrent(
+          validationContext.content,
+          `${asset.id}.xml`,
+          controller.signal,
+        );
+        await store.recordValidation(result, validationContext);
+      } catch (validationError) {
+        if (!validationContext || store.cancelValidation(validationContext)) {
+          setError(messageOf(validationError));
+        }
       }
-    }
-  }, [store, validateCurrent]);
+    },
+    [store, validateCurrent],
+  );
 
   useEffect(() => {
     if (initialLoadStarted.current) return;
@@ -199,12 +205,21 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
     }
   }, [store]);
 
+  const handleCopyPrompt = useCallback(() => {
+    setError(null);
+    void navigator.clipboard
+      .writeText(AGENT_PROMPT)
+      .catch((copyError: unknown) => {
+        setError(`Copy prompt: ${messageOf(copyError)}`);
+      });
+  }, []);
+
   const handleApprove = useCallback(
     (proposalId: string) => {
       setError(null);
       try {
         store.approveProposal(proposalId);
-        void runValidation();
+        void runValidation("approved-draft");
       } catch (approvalError) {
         setError(messageOf(approvalError));
       }
@@ -254,7 +269,7 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
         xsdCount={xsdCount}
       />
 
-      <AgentGuide />
+      <AgentGuide status={webMcpStatus} onCopyPrompt={handleCopyPrompt} />
 
       {error ? (
         <div className="error-banner" role="alert">
@@ -293,16 +308,22 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
           <ValidationPanel
             asset={selectedAsset}
             result={state.validation}
-            validating={state.pendingValidation !== null}
+            validating={state.pendingValidation?.target === "approved-draft"}
             selectionPending={state.pendingAssetSelection !== null}
             canStageGuidedRepair={canStageGuidedRepair}
+            showManualFallback={webMcpStatus !== "connected"}
             hasPendingProposal={state.pendingProposal !== null}
-            onValidate={() => void runValidation()}
+            onValidate={() => void runValidation("approved-draft")}
             onStageGuidedRepair={handleStageGuidedRepair}
           />
           <ProposalPanel
             proposal={state.pendingProposal}
+            proof={state.proposalValidation}
+            validating={state.pendingValidation?.target === "pending-proposal"}
+            selectionPending={state.pendingAssetSelection !== null}
+            connected={webMcpStatus === "connected"}
             draftContent={state.draftContent}
+            onValidateProposal={() => void runValidation("pending-proposal")}
             onApprove={handleApprove}
             onReject={handleReject}
           />
@@ -313,7 +334,7 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
 
       <footer className="app-footer">
         <span>All validation runs locally in your browser.</span>
-        <span>Official assets frozen 2026-08-30 · SHA-256 locked</span>
+        <span>Official assets frozen 2026-09-02 · SHA-256 locked</span>
         <a
           href="https://github.com/greqone/PrzedWysylkaWebMCPLab"
           target="_blank"

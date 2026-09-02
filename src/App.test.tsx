@@ -3,7 +3,7 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentType } from "react";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
 import type { ValidationResult } from "./validation/types";
 import { createWorkspaceStore } from "./workspace/store";
@@ -36,12 +36,13 @@ async function loadApp(): Promise<AppModule | null> {
   ) as Promise<AppModule | null>;
 }
 
-function createDependencies(): AppDependencies {
+function createDependencies(supported = false): AppDependencies {
   let id = 0;
   const store = createWorkspaceStore({
     now: () => "2026-08-30T18:00:00.000Z",
     createId: () => `ui-event-${++id}`,
     canStageReplacements: (assetId) => assetId === "cirfmf-template-base",
+    hashContent: async () => "a".repeat(64),
   });
   return {
     store,
@@ -64,7 +65,7 @@ function createDependencies(): AppDependencies {
             rawOutput: "invalid",
           }
         : { valid: true, findings: [], rawOutput: "" },
-    registerTools: async () => ({ supported: false, controller: null }),
+    registerTools: async () => ({ supported, controller: null }),
   };
 }
 
@@ -91,18 +92,32 @@ describe("FA(3) workbench", () => {
     await waitFor(() =>
       expect(screen.getByTestId("source-code").textContent).toContain("#nip#"),
     );
+    expect(screen.getByText(/Official assets frozen 2026-09-02/u)).toBeTruthy();
     expect(screen.getByText("WebMCP unavailable")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Validate XML" }));
+    expect(
+      screen.getByRole("heading", { name: "Approved draft validation" }),
+    ).toBeTruthy();
     expect(await screen.findByText("Needs attention")).toBeTruthy();
 
     await user.click(
-      screen.getByRole("button", { name: "Stage guided repair" }),
+      screen.getByRole("button", { name: "Manual demo fallback" }),
     );
     expect(await screen.findByText("Pending human approval")).toBeTruthy();
     expect(screen.getByTestId("source-code").textContent).toContain("#nip#");
 
-    await user.click(screen.getByRole("button", { name: "Approve changes" }));
+    const approve = screen.getByRole("button", { name: "Approve changes" });
+    expect((approve as HTMLButtonElement).disabled).toBe(true);
+    await user.click(
+      screen.getByRole("button", { name: "Validate proposed change" }),
+    );
+    expect(
+      await screen.findByText("Schema valid before approval"),
+    ).toBeTruthy();
+    expect((approve as HTMLButtonElement).disabled).toBe(false);
+
+    await user.click(approve);
     await waitFor(() =>
       expect(screen.getByTestId("source-code").textContent).not.toContain(
         "#nip#",
@@ -112,7 +127,6 @@ describe("FA(3) workbench", () => {
       "FV/2026/001",
     );
 
-    await user.click(screen.getByRole("button", { name: "Validate XML" }));
     expect(await screen.findByText("Schema valid")).toBeTruthy();
   });
 
@@ -128,12 +142,66 @@ describe("FA(3) workbench", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Stage guided repair" }),
+      screen.getByRole("button", { name: "Manual demo fallback" }),
     );
     await user.click(screen.getByRole("button", { name: "Reject proposal" }));
 
     expect(screen.queryByText("Pending human approval")).toBeNull();
     expect(screen.getByTestId("source-code").textContent).toContain("#nip#");
+  });
+
+  test("requires agent preflight in connected mode and copies the exact prompt", async () => {
+    const module = await loadApp();
+    expect(module, "App module must exist").not.toBeNull();
+    if (!module) return;
+
+    const dependencies = createDependencies(true);
+    const user = userEvent.setup();
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(<module.App dependencies={dependencies} />);
+    await screen.findByText("6 WebMCP tools live");
+    expect(
+      screen.queryByRole("button", { name: "Manual demo fallback" }),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Copy prompt" }));
+    expect(writeText).toHaveBeenCalledWith(
+      "Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Validate the pending proposal, but do not approve it.",
+    );
+
+    await act(async () => {
+      dependencies.store.stageProposal({
+        summary: "Agent proposal",
+        replacements: [
+          { search: "#nip#", replacement: "1111111111", reason: "Valid NIP" },
+          {
+            search: "#invoice_number#",
+            replacement: "FV/2026/001",
+            reason: "Valid invoice number",
+          },
+        ],
+      });
+    });
+    expect(await screen.findByText("Waiting for agent preflight")).toBeTruthy();
+    const approve = screen.getByRole("button", { name: "Approve changes" });
+    expect((approve as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => {
+      const context = dependencies.store.startValidation("pending-proposal");
+      await dependencies.store.recordValidation(
+        { valid: true, findings: [], rawOutput: "valid" },
+        context,
+      );
+    });
+    expect(
+      await screen.findByText("Schema valid before approval"),
+    ).toBeTruthy();
+    expect(screen.getByText(/aaaaaaaaaaaa/u)).toBeTruthy();
+    expect((approve as HTMLButtonElement).disabled).toBe(false);
   });
 
   test("keeps the newest asset selection when loads resolve out of order", async () => {
@@ -151,12 +219,13 @@ describe("FA(3) workbench", () => {
       if (assetId === "mf-fa3-example-02") {
         return second.promise;
       }
-      return "<Faktura>default</Faktura>";
+      return "<Faktura><NIP>#nip#</NIP><P_2>#invoice_number#</P_2></Faktura>";
     };
 
     const user = userEvent.setup();
     render(<module.App dependencies={dependencies} />);
     await screen.findByText("WebMCP unavailable");
+    await screen.findByRole("button", { name: "Manual demo fallback" });
 
     await user.click(
       screen.getByRole("button", { name: /MF FA\(3\) Example 1MF example/u }),
@@ -168,6 +237,13 @@ describe("FA(3) workbench", () => {
       (
         screen.getByRole("button", {
           name: "Validate XML",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Manual demo fallback",
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
@@ -183,6 +259,44 @@ describe("FA(3) workbench", () => {
     expect(screen.getByTestId("source-code").textContent).toContain("second");
     expect(dependencies.store.getState().selectedAssetId).toBe(
       "mf-fa3-example-02",
+    );
+  });
+
+  test("disables proposal rejection while another asset is loading", async () => {
+    const module = await loadApp();
+    expect(module, "App module must exist").not.toBeNull();
+    if (!module) return;
+
+    const dependencies = createDependencies();
+    const nextAsset = deferred<string>();
+    const defaultLoader = dependencies.loadAssetText;
+    dependencies.loadAssetText = async (assetId) =>
+      assetId === "mf-fa3-example-01"
+        ? nextAsset.promise
+        : defaultLoader(assetId);
+    const user = userEvent.setup();
+    render(<module.App dependencies={dependencies} />);
+    await screen.findByRole("button", { name: "Manual demo fallback" });
+    await user.click(
+      screen.getByRole("button", { name: "Manual demo fallback" }),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /MF FA\(3\) Example 1MF example/u }),
+    );
+
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Reject proposal",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    nextAsset.resolve("<Faktura>next</Faktura>");
+    await waitFor(() =>
+      expect(dependencies.store.getState().selectedAssetId).toBe(
+        "mf-fa3-example-01",
+      ),
     );
   });
 });

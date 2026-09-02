@@ -5,6 +5,7 @@ export type WorkspaceEventType =
   | "asset-selected"
   | "validation-completed"
   | "proposal-staged"
+  | "proposal-validation-completed"
   | "proposal-approved"
   | "proposal-rejected";
 
@@ -29,11 +30,26 @@ export interface AssetSelectionContext {
   operationId: number;
 }
 
+export type ValidationTarget = "approved-draft" | "pending-proposal";
+
 export interface ValidationContext {
+  target: ValidationTarget;
   assetId: string;
   revision: number;
   documentGeneration: number;
   operationId: number;
+  content: string;
+  proposalId: string | null;
+}
+
+export interface ProposalValidationProof {
+  assetId: string;
+  proposalId: string;
+  baseRevision: number;
+  documentGeneration: number;
+  validatedContent: string;
+  proposedSha256: string;
+  result: ValidationResult;
 }
 
 export interface WorkspaceState {
@@ -46,6 +62,7 @@ export interface WorkspaceState {
   pendingValidation: ValidationContext | null;
   pendingProposal: PendingProposal | null;
   validation: ValidationResult | null;
+  proposalValidation: ProposalValidationProof | null;
   history: WorkspaceEvent[];
 }
 
@@ -63,8 +80,11 @@ export interface WorkspaceStore {
   beginAssetSelection(assetId: string): AssetSelectionContext;
   completeAssetSelection(context: AssetSelectionContext, content: string): void;
   cancelAssetSelection(context: AssetSelectionContext): boolean;
-  startValidation(): ValidationContext;
-  recordValidation(result: ValidationResult, context: ValidationContext): void;
+  startValidation(target?: ValidationTarget): ValidationContext;
+  recordValidation(
+    result: ValidationResult,
+    context: ValidationContext,
+  ): Promise<string>;
   cancelValidation(context: ValidationContext): boolean;
   stageProposal(input: StageProposalInput): PendingProposal;
   approveProposal(proposalId: string): void;

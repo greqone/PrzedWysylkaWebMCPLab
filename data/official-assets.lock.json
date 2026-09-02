@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "frozenAt": "2026-08-30",
+  "frozenAt": "2026-09-02",
   "sources": {
     "mfExamplesArchive": {
       "pageUrl": "https://ksef.podatki.gov.pl/pliki-do-pobrania-ksef-20",
@@ -20,9 +20,9 @@
     },
     "cirfmfJavaClient": {
       "repository": "https://github.com/CIRFMF/ksef-client-java",
-      "commit": "fd948a3d70c86335a216d988e52c697b59065a4c",
+      "commit": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
       "license": "MIT",
-      "licenseUrl": "https://github.com/CIRFMF/ksef-client-java/blob/fd948a3d70c86335a216d988e52c697b59065a4c/LICENSE.md"
+      "licenseUrl": "https://github.com/CIRFMF/ksef-client-java/blob/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/LICENSE.md"
     },
     "cirfmfPdfGenerator": {
       "repository": "https://github.com/CIRFMF/ksef-pdf-generator",
@@ -624,14 +624,14 @@
       "role": "cirfmf-fa3-template",
       "title": "CIRFMF Java integration FA(3) custom Subject2 template",
       "localPath": "official-assets/cirfmf/java/integration/invoice-template-fa-3-with-custom-subject_2.xml",
-      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml",
+      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml",
       "sourcePath": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml",
       "sha256": "903a64c0ab0633c69b056d71db02d8d7d0bbca9f407de23ee60661f402b45f8d",
       "bytes": 6081,
       "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
       "rootElement": "Faktura",
       "expectedValidation": "invalid-template",
-      "sourceRevision": "fd948a3d70c86335a216d988e52c697b59065a4c"
+      "sourceRevision": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256"
     },
     {
       "id": "cirfmf-java-integration-custom-subject3",
@@ -639,14 +639,14 @@
       "role": "cirfmf-fa3-template",
       "title": "CIRFMF Java integration FA(3) custom Subject3 template",
       "localPath": "official-assets/cirfmf/java/integration/invoice-template-fa-3-with-custom-subject_3.xml",
-      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml",
+      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml",
       "sourcePath": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml",
       "sha256": "c311dcc8641026ac22e6de8ce8692ed40ef7f8cb5ef83d5816cdfb63125e8885",
       "bytes": 6595,
       "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
       "rootElement": "Faktura",
       "expectedValidation": "invalid-template",
-      "sourceRevision": "fd948a3d70c86335a216d988e52c697b59065a4c"
+      "sourceRevision": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256"
     },
     {
       "id": "cirfmf-java-integration-template-v3",
@@ -654,14 +654,14 @@
       "role": "cirfmf-fa3-template",
       "title": "CIRFMF Java integration FA(3) v3 template",
       "localPath": "official-assets/cirfmf/java/integration/invoice-template_v3.xml",
-      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template_v3.xml",
+      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template_v3.xml",
       "sourcePath": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice-template_v3.xml",
       "sha256": "69bf8038d935afdc26649e9d2d3ad13eec0fac52ed8bbb12fc63679c17833a7e",
       "bytes": 4656,
       "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
       "rootElement": "Faktura",
       "expectedValidation": "invalid-template",
-      "sourceRevision": "fd948a3d70c86335a216d988e52c697b59065a4c"
+      "sourceRevision": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256"
     },
     {
       "id": "cirfmf-java-main-template-v3",
@@ -669,14 +669,14 @@
       "role": "cirfmf-fa3-template",
       "title": "CIRFMF Java main FA(3) v3 template",
       "localPath": "official-assets/cirfmf/java/main/invoice-template_v3.xml",
-      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/demo-web-app/src/main/resources/xml/invoices/sample/invoice-template_v3.xml",
+      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/demo-web-app/src/main/resources/xml/invoices/sample/invoice-template_v3.xml",
       "sourcePath": "demo-web-app/src/main/resources/xml/invoices/sample/invoice-template_v3.xml",
       "sha256": "69bf8038d935afdc26649e9d2d3ad13eec0fac52ed8bbb12fc63679c17833a7e",
       "bytes": 4656,
       "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
       "rootElement": "Faktura",
       "expectedValidation": "invalid-template",
-      "sourceRevision": "fd948a3d70c86335a216d988e52c697b59065a4c",
+      "sourceRevision": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256",
       "contentDuplicateOf": "cirfmf-java-integration-template-v3"
     },
     {
@@ -685,14 +685,14 @@
       "role": "cirfmf-fa3-template",
       "title": "CIRFMF Java FA(3) self-invoicing template",
       "localPath": "official-assets/cirfmf/java/integration/invoice_template_v3_self_invoicing.xml",
-      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/fd948a3d70c86335a216d988e52c697b59065a4c/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_v3_self_invoicing.xml",
+      "sourceUrl": "https://raw.githubusercontent.com/CIRFMF/ksef-client-java/4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256/demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_v3_self_invoicing.xml",
       "sourcePath": "demo-web-app/src/integrationTest/resources/xml/invoices/sample/invoice_template_v3_self_invoicing.xml",
       "sha256": "e269201ca70318fe90fa35d6ded95f3583708f3dacbaa41f157d8978a86cb2d6",
       "bytes": 4663,
       "namespace": "http://crd.gov.pl/wzor/2025/06/25/13775/",
       "rootElement": "Faktura",
       "expectedValidation": "invalid-template",
-      "sourceRevision": "fd948a3d70c86335a216d988e52c697b59065a4c"
+      "sourceRevision": "4e9b10a7c1ef1d1528bf2c1e82de1b4c9677e256"
     },
     {
       "id": "cirfmf-related-pef-ubl",

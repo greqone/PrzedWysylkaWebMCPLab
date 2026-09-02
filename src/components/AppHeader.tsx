@@ -25,7 +25,7 @@ export function AppHeader({
             <h1>PrzedWysylka Lab</h1>
             <span className="version-pill">FA(3)</span>
           </div>
-          <p>Official XML · canonical XSD · human-gated WebMCP</p>
+          <p>Agent proposes · Schema proves · Human approves</p>
         </div>
       </div>
 

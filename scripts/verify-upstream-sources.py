@@ -36,6 +36,14 @@ CODELOAD_GITHUB = re.compile(
     r"^https://codeload\.github\.com/CIRFMF/([^/]+)/zip/([a-f0-9]{40})$"
 )
 _ARCHIVE_CACHE: dict[str, bytes] = {}
+DETERMINISTIC_ARCHIVE_REPLAY_URLS = frozenset(
+    {
+        "https://raw.githubusercontent.com/CIRFMF/ksef-client-csharp/"
+        "04f01c1c7834336a3aef1804149cd5bcbd883a3e/"
+        "KSeF.Client.Tests.PdfTestApp/Externals/ksef-pdf-generator/"
+        "assets/invoice.xml"
+    }
+)
 
 
 def sha256(data: bytes) -> str:
@@ -387,7 +395,7 @@ def fetch(
     raise RuntimeError(f"failed to fetch {url}: {last_error}")
 
 
-def fetch_raw_with_archive_fallback(
+def fetch_raw_from_pinned_archive(
     url: str,
     expected_bytes: int,
     allowed_urls: set[str],
@@ -396,54 +404,53 @@ def fetch_raw_with_archive_fallback(
     archive_expected_bytes: int,
     archive_sha256: str,
     source_path: str,
-    fallback_used: list[str] | None = None,
+    replay_used: list[str] | None = None,
 ) -> bytes:
-    """Fetch a pinned raw GitHub resource, falling back to its pinned codeload
-    archive member when the raw endpoint is unavailable (for example, GitHub
-    serving 400 for a submodule-embedded path). The archive URL, byte count,
-    and digest are frozen in the scope ledger, so the fallback remains
-    byte-identical and first-party."""
-    try:
-        return fetch(url, expected_bytes, allowed_urls, pins)
-    except Exception as raw_error:
-        archive = _ARCHIVE_CACHE.get(archive_url)
-        if archive is None:
-            archive = fetch(
-                archive_url,
-                archive_expected_bytes,
-                allowed_urls,
-                pins,
+    """Replay one declared raw resource from its pinned codeload member.
+
+    This route is deterministic for known submodule-embedded paths. Normal raw
+    resources never enter this function and fail closed if their exact URL is
+    unavailable.
+    """
+    archive = _ARCHIVE_CACHE.get(archive_url)
+    if archive is None:
+        archive = fetch(
+            archive_url,
+            archive_expected_bytes,
+            allowed_urls,
+            pins,
+        )
+        if len(archive) != archive_expected_bytes:
+            raise RuntimeError(
+                f"{url}: replay archive expected {archive_expected_bytes} "
+                f"bytes, received {len(archive)}"
             )
-            if len(archive) != archive_expected_bytes:
-                raise RuntimeError(
-                    f"{url}: fallback archive expected {archive_expected_bytes} "
-                    f"bytes, received {len(archive)}"
-                ) from raw_error
-            if sha256(archive) != archive_sha256:
-                raise RuntimeError(
-                    f"{url}: fallback archive SHA-256 mismatch"
-                ) from raw_error
-            _ARCHIVE_CACHE[archive_url] = archive
-        with zipfile.ZipFile(io.BytesIO(archive)) as zipped:
-            member_name = archive_member_path(
-                RAW_GITHUB.match(url).group(1),
-                RAW_GITHUB.match(url).group(2),
-                source_path,
+        if sha256(archive) != archive_sha256:
+            raise RuntimeError(f"{url}: replay archive SHA-256 mismatch")
+        _ARCHIVE_CACHE[archive_url] = archive
+    raw_match = RAW_GITHUB.match(url)
+    if raw_match is None:
+        raise RuntimeError(f"{url}: deterministic archive replay requires raw GitHub")
+    with zipfile.ZipFile(io.BytesIO(archive)) as zipped:
+        member_name = archive_member_path(
+            raw_match.group(1),
+            raw_match.group(2),
+            source_path,
+        )
+        try:
+            data = read_zip_member(
+                zipped,
+                member_name,
+                expected_bytes,
+                url,
             )
-            try:
-                data = read_zip_member(
-                    zipped,
-                    member_name,
-                    expected_bytes,
-                    url,
-                )
-            except KeyError as error:
-                raise RuntimeError(
-                    f"{url}: fallback archive lacks member {member_name}"
-                ) from error
-        if fallback_used is not None:
-            fallback_used.append(url)
-        return data
+        except KeyError as error:
+            raise RuntimeError(
+                f"{url}: replay archive lacks member {member_name}"
+            ) from error
+    if replay_used is not None:
+        replay_used.append(url)
+    return data
 
 
 def assert_resource_bytes(
@@ -543,7 +550,13 @@ def verify(report_path: pathlib.Path | None) -> dict[str, object]:
             )
     urls = sorted(expected_sizes)
     fetched: dict[str, bytes] = {}
-    fallback_used: list[str] = []
+    archive_replay_used: list[str] = []
+    missing_archive_replays = DETERMINISTIC_ARCHIVE_REPLAY_URLS.difference(urls)
+    if missing_archive_replays:
+        errors.append(
+            "deterministic archive replay URLs are absent from the frozen resources: "
+            f"{sorted(missing_archive_replays)}"
+        )
     archive_by_repo = {
         str(record["name"]): record["archive"]
         for record in scope["cirfmfRepositories"]
@@ -552,25 +565,27 @@ def verify(report_path: pathlib.Path | None) -> dict[str, object]:
         futures = {}
         for url in urls:
             match = RAW_GITHUB.match(url)
-            if match:
+            if match and url in DETERMINISTIC_ARCHIVE_REPLAY_URLS:
                 repository = match.group(1)
                 archive = archive_by_repo.get(repository)
-                if archive is not None:
-                    futures[
-                        executor.submit(
-                            fetch_raw_with_archive_fallback,
-                            url,
-                            expected_sizes[url],
-                            allowed_urls,
-                            pins,
-                            str(archive["sourceUrl"]),
-                            int(archive["bytes"]),
-                            str(archive["sha256"]),
-                            urlsplit(url).path.split("/", 4)[4],
-                            fallback_used,
-                        )
-                    ] = url
+                if archive is None:
+                    errors.append(f"{url}: replay archive is missing from scope")
                     continue
+                futures[
+                    executor.submit(
+                        fetch_raw_from_pinned_archive,
+                        url,
+                        expected_sizes[url],
+                        allowed_urls,
+                        pins,
+                        str(archive["sourceUrl"]),
+                        int(archive["bytes"]),
+                        str(archive["sha256"]),
+                        urlsplit(url).path.split("/", 4)[4],
+                        archive_replay_used,
+                    )
+                ] = url
+                continue
             futures[
                 executor.submit(
                     fetch,
@@ -722,7 +737,7 @@ def verify(report_path: pathlib.Path | None) -> dict[str, object]:
             "peerIpRevalidated": True,
             "proxiesDisabled": True,
         },
-        "archiveFallbackUsed": fallback_used,
+        "archiveReplayUsed": archive_replay_used,
         "ministryArchiveSha256": archive_sha,
     }
     if report_path is not None:
