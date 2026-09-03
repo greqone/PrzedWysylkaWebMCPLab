@@ -16,7 +16,7 @@ A browser-local FA(3) workbench where an agent can prove a repair while approval
 - Credentials: none
 - Hosting: Netlify continuous deployment from `main`
 
-The copy below is ready to paste into Devpost. Two operator gates remain: make the repository public and publish the reviewed video on YouTube. Do not submit until both URLs work in a signed-out browser.
+The copy below is ready to paste into Devpost. Two publication artifacts remain: make the repository public and publish the reviewed video on YouTube. The entrant must also confirm eligibility, save the Devpost draft, and perform the final submission. Do not submit until both URLs work in a signed-out browser.
 
 ## Testing instructions
 
@@ -154,6 +154,7 @@ The project treats the web page as a shared review room—not a UI to bypass—a
 
 ## Final submission checklist
 
+- [ ] Confirm the entrant is eligible, has joined The WebMCP Challenge on Devpost, and is authorized to represent the named team or organization, if any
 - [x] Working public Netlify URL with no credentials
 - [x] English project description and testing instructions
 - [x] Complete source, local setup, MIT license, and third-party notices in the repository
@@ -163,6 +164,8 @@ The project treats the web page as a shared review room—not a UI to bypass—a
 - [ ] Record the live ChatGPT Desktop workflow with a visible manual approval click
 - [ ] Review the video for notifications, personal information, trademarks, and copyrighted audio
 - [ ] Upload the video as Public on YouTube and replace the pending URL above
+- [ ] Upload `docs/assets/native-workbench.png` as the primary Devpost gallery image
+- [ ] Paste this package into a Devpost submission draft and save it
 - [ ] Open the live URL, repository, and video in a signed-out browser
 - [ ] Submit before September 3, 2026 at 4:00 PM EDT (1:00 PM PT)[6]
 

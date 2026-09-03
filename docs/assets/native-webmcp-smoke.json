@@ -49,7 +49,7 @@
   },
   "proposalPreflight": {
     "valid": true,
-    "proposalId": "5956e15f-3162-4af7-9caf-ec98e04f331c",
+    "proposalId": "54cad4b6-c45b-4f4b-bd9f-ed8aee733210",
     "baseRevision": 0,
     "contentSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
     "findingCount": 0
@@ -58,12 +58,12 @@
     "selectedAssetId": "cirfmf-template-base",
     "revision": 0,
     "documentGeneration": 2,
-    "proposalId": "5956e15f-3162-4af7-9caf-ec98e04f331c",
+    "proposalId": "54cad4b6-c45b-4f4b-bd9f-ed8aee733210",
     "baseRevision": 0,
     "proposedSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
     "proof": {
       "assetId": "cirfmf-template-base",
-      "proposalId": "5956e15f-3162-4af7-9caf-ec98e04f331c",
+      "proposalId": "54cad4b6-c45b-4f4b-bd9f-ed8aee733210",
       "baseRevision": 0,
       "documentGeneration": 2,
       "proposedSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"
@@ -80,6 +80,6 @@
     "pendingProposal": null,
     "draftSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"
   },
-  "screenshotSha256": "fb311459130d9f0b1a4a6778e1fd13dd8efe6c55d7eb6c073c4cdb2b24409588",
+  "screenshotSha256": "f3c306ccf7793e8b231934d9db02ed17baa70b899e43a1b2b699ad7f69279473",
   "runtimeErrors": []
 }
