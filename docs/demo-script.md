@@ -2,6 +2,17 @@
 
 The final recording must be under three minutes, in English, with audible narration.[6] Record at 1440×900 or higher in the current ChatGPT Desktop built-in browser. Use GPT-5.6 Sol or GPT-5.6 Terra; GPT-5.6 Luna currently has WebMCP disabled.[5]
 
+**Live URL:** https://przedwysylka-webmcp-lab-greqone.netlify.app/
+
+## Recording setup
+
+1. Make the GitHub repository public and confirm the MIT license appears in its About panel.
+2. Open the live URL in a signed-out ordinary browser and confirm it needs no credentials.
+3. Update ChatGPT Desktop, select GPT-5.6 Sol or GPT-5.6 Terra, open the live URL in the built-in browser, and confirm `Site tools` lists exactly six tools.
+4. Hard-reload the page so the recording starts at Revision 0 with no pending proposal.
+5. Record at 1440×1050 when possible. Hide notifications, bookmarks, unrelated tabs, account details, and desktop clutter.
+6. Rehearse once, then start a fresh page for the final take. Do not splice the proposal proof and manual approval click.
+
 ## 0:00–0:18 — Problem and product
 
 **On screen:** Full workbench, header and complete corpus count.
@@ -37,7 +48,7 @@ Open `Site tools` and briefly show exactly six available tools. Keep the app and
 
 > The agent discovers structured page tools instead of scraping controls. It selects the official template and validates the current approved draft against the same canonical schema closure used by the UI.
 
-Show `Approved draft validation`, Revision 0, `Needs attention`, and the finding for `#nip#`. Hold long enough for the scope to be readable.
+Show `Current approved revision`, Revision 0, `Needs attention`, and the finding for `#nip#`. Hold long enough for the scope to be readable.
 
 ## 1:08–1:43 — Agent proposes and schema proves
 
@@ -88,6 +99,22 @@ Wait for `Schema valid`.
 - Do not cut between proposal preflight and approval; the human click must be visible.
 - Ensure narration is English and no copyrighted music plays.
 - Review the final video for personal information, notifications, bookmarks, and unrelated trademarks before publishing.
+
+## YouTube package
+
+**Title:** PrzedWysylka WebMCP Lab — Agent proposes, schema proves, human approves
+
+**Description:**
+
+> PrzedWysylka WebMCP Lab is a browser-local FA(3) XML workbench built for the WebMCP Challenge. A browser agent uses six page-native tools to inspect official sources, validate Revision 0, stage two exact replacements, and validate the pending bytes. Approval remains a visible UI action. The final Revision 1 is validated again against the canonical schema closure.
+>
+> Live demo: https://przedwysylka-webmcp-lab-greqone.netlify.app/
+>
+> Source: https://github.com/greqone/PrzedWysylkaWebMCPLab
+
+**Thumbnail:** use `docs/assets/native-workbench.png` or a clean frame showing `Schema valid before approval` and the enabled `Approve changes` button.
+
+**Visibility:** Public. Confirm the public watch URL in a signed-out browser before adding it to Devpost.
 
 ## Sources
 

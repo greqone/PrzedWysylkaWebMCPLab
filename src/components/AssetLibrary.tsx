@@ -80,8 +80,17 @@ export function AssetLibrary({
     const container = element?.parentElement;
     if (!element || !container) return;
 
-    const itemTop = element.offsetTop - container.offsetTop;
-    container.scrollTop = Math.max(0, itemTop - element.offsetHeight * 3);
+    const items = [
+      ...container.querySelectorAll<HTMLButtonElement>(".asset-item"),
+    ];
+    const selectedIndex = items.indexOf(element);
+    const anchor = items[Math.max(0, selectedIndex - 2)] ?? element;
+    const anchorTop = anchor.getBoundingClientRect().top;
+    const containerTop = container.getBoundingClientRect().top;
+    container.scrollTop = Math.max(
+      0,
+      container.scrollTop + anchorTop - containerTop,
+    );
   }, [selectedId]);
 
   return (

@@ -161,6 +161,26 @@ describe("evidence wording", () => {
     );
     const exactPrompt =
       "Open the base FA(3) template, validate it, then stage exact replacements for its two placeholders. Validate the pending proposal, but do not approve it.";
+    const liveUrl = "https://przedwysylka-webmcp-lab-greqone.netlify.app/";
+
+    for (const content of [readme, submission, demoScript]) {
+      expect(content).toContain(liveUrl);
+    }
+    expect(submission).not.toContain("Public deployment URL: not assigned");
+    for (const heading of [
+      "## Testing instructions",
+      "## Inspiration",
+      "## Challenges we ran into",
+      "## Accomplishments that we're proud of",
+      "## What we learned",
+      "## What's next",
+      "## Final submission checklist",
+    ]) {
+      expect(submission).toContain(heading);
+    }
+    expect(demoScript).toContain("## Recording setup");
+    expect(demoScript).toContain("## YouTube package");
+    expect(demoScript).toContain("Current approved revision");
 
     expect(readme).toContain(
       "**Agent proposes. Schema proves. Human approves.**",

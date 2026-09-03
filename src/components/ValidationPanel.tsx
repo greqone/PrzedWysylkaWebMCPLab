@@ -41,7 +41,7 @@ export function ValidationPanel({
       <div className="panel-heading compact-heading">
         <div>
           <span className="eyebrow">Canonical CRD closure</span>
-          <h2 id="validation-title">Approved draft validation</h2>
+          <h2 id="validation-title">Current approved revision</h2>
         </div>
         <span className={`result-pill result-pill--${statusClass}`}>
           {status}

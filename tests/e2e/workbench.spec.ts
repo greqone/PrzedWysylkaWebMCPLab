@@ -297,3 +297,32 @@ test("judge-critical evidence stays legible and actionable on desktop and mobile
   );
   expect(serious).toEqual([]);
 });
+
+test("keeps the default selected asset fully visible inside the mobile corpus list", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installWebMcpHarness(page);
+  await page.goto("/");
+  await expect(page.getByText("6 WebMCP tools live")).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const list = document.querySelector(".asset-list") as HTMLElement;
+    const selected = document.querySelector(
+      ".asset-item.is-selected",
+    ) as HTMLElement;
+    const listBox = list.getBoundingClientRect();
+    const selectedBox = selected.getBoundingClientRect();
+    return {
+      listTop: listBox.top,
+      listBottom: listBox.bottom,
+      selectedTop: selectedBox.top,
+      selectedBottom: selectedBox.bottom,
+    };
+  });
+
+  expect(geometry.selectedTop).toBeGreaterThanOrEqual(geometry.listTop - 0.5);
+  expect(geometry.selectedBottom).toBeLessThanOrEqual(
+    geometry.listBottom + 0.5,
+  );
+});

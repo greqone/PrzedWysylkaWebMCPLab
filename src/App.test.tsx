@@ -134,7 +134,7 @@ describe("FA(3) workbench", () => {
 
     await user.click(screen.getByRole("button", { name: "Validate XML" }));
     expect(
-      screen.getByRole("heading", { name: "Approved draft validation" }),
+      screen.getByRole("heading", { name: "Current approved revision" }),
     ).toBeTruthy();
     expect(await screen.findByText("Needs attention")).toBeTruthy();
 

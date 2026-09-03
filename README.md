@@ -4,15 +4,17 @@
 
 PrzedWysylka WebMCP Lab is a browser-local FA(3) XML workbench where a person and a browser agent share the same official source, validator, pending diff, and audit trail. Through WebMCP, the agent can prepare exact work; approval, rejection, and download are absent from the WebMCP capability surface and remain visible UI actions.
 
+**Live demo:** [https://przedwysylka-webmcp-lab-greqone.netlify.app/](https://przedwysylka-webmcp-lab-greqone.netlify.app/) — no account or credentials required.
+
 ![Native Chrome WebMCP workflow capture: invalid approved draft beside a schema-valid pending proposal and UI-only review controls](docs/assets/native-workbench.png)
 
 This is a production-build native Chrome capture, not a mock or injected API. [`docs/assets/native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json) uses evidence schema version 2 and records Node `22.22.2`, the exact evidence-time Chrome build, `nativeModelContext: true`, `injectedHarness: false`, exactly six tools, a deterministic production-artifact digest, manifest/source-scope/screenshot hashes, an invalid Revision 0, and a valid Revision 1 with no browser errors. The smoke asserts that the preflight hash, pending-status hash, store-proof hash, and final draft hash are equal. It uses an automated Playwright click through the visible UI review control, so it proves the browser's native registration, callback, proof, and UI-gate paths; it does not claim that a person approved this automated test or that an AI model chose the right tools unaided. Like any web interface, browser automation may still actuate UI controls under the browser's own safety policies; this application does not infer a physical human from a click.
 
-> **Publication gate:** the repository does not invent a live deployment or YouTube URL. Those remain explicit operator actions and must be filled in before submission.
+> **Submission gate:** the live deployment is active. The GitHub repository is still private and the public YouTube URL does not exist yet; both must be completed and verified before the Devpost entry is submitted.
 
 ## 30-second judge path
 
-1. Open the app in the current ChatGPT Desktop built-in browser with GPT-5.6 Sol or GPT-5.6 Terra. GPT-5.6 Luna currently has WebMCP disabled.[5]
+1. Open the [live demo](https://przedwysylka-webmcp-lab-greqone.netlify.app/) in the current ChatGPT Desktop built-in browser with GPT-5.6 Sol or GPT-5.6 Terra. GPT-5.6 Luna currently has WebMCP disabled.[5]
 2. Open `Site tools` and expect exactly six tools. Chrome 149+ is the alternative: enable `chrome://flags/#enable-webmcp-testing`, then relaunch.[1][6]
 3. Send the exact prompt below.
 4. Watch Revision 0 fail canonical validation while the pending proposal earns a schema-valid SHA-256 proof.
@@ -91,6 +93,10 @@ The bundled XML/XSD files are excluded from this repository's MIT license. See t
 ## Clean-room public boundary
 
 This repository was created during the challenge window. It does **not** contain code copied from the private PrzedWysylka product, production repair rules, KSeF integrations, credentials, configuration, telemetry, or customer data. The implementation is a small clean-room wrapper over public dependencies and public first-party fixtures.
+
+## Live deployment
+
+Netlify serves the production app at [przedwysylka-webmcp-lab-greqone.netlify.app](https://przedwysylka-webmcp-lab-greqone.netlify.app/). Continuous deployment tracks `main` from this repository and uses the committed `netlify.toml`: Node `22.22.2`, npm `11.2.0`, `npm run build`, and `dist`. The deployment requires no login and keeps XML processing in the browser.
 
 ## Run locally
 
@@ -199,7 +205,7 @@ See [`docs/architecture.md`](docs/architecture.md) for component boundaries and 
 - [`docs/assets/upstream-verification.json`](docs/assets/upstream-verification.json) — live first-party byte replay evidence
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — asset and dependency provenance
 
-The public deployment and final submission remain explicit operator actions.
+Repository publication, the final human-click recording, YouTube publication, and Devpost submission remain explicit operator actions.
 
 ## Sources
 
