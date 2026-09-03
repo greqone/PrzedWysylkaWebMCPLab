@@ -114,6 +114,8 @@ describe("evidence wording", () => {
     expect(readme).toContain(
       "preflight hash, pending-status hash, store-proof hash, and final draft hash are equal",
     );
+    expect(readme).toContain("the exact evidence-time Chrome build");
+    expect(readme).not.toMatch(/Chrome `\d+\.\d+\.\d+\.\d+`/u);
 
     expect(submission).toContain(
       "Every successful tool text payload is capped at 1,500 serialized characters",

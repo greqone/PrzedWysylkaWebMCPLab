@@ -16,7 +16,7 @@
     "xsd": 10,
     "fa3Xml": 44
   },
-  "chromeVersion": "152.0.7977.64",
+  "chromeVersion": "152.0.7977.75",
   "featureFlag": "WebMCPTesting",
   "nativeModelContext": true,
   "injectedHarness": false,
@@ -49,7 +49,7 @@
   },
   "proposalPreflight": {
     "valid": true,
-    "proposalId": "dfcd7af7-54fb-4ffb-83d2-c5d06f9b9269",
+    "proposalId": "650c2c12-aa98-4ab0-b5aa-7b08d4f141a4",
     "baseRevision": 0,
     "contentSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
     "findingCount": 0
@@ -58,12 +58,12 @@
     "selectedAssetId": "cirfmf-template-base",
     "revision": 0,
     "documentGeneration": 2,
-    "proposalId": "dfcd7af7-54fb-4ffb-83d2-c5d06f9b9269",
+    "proposalId": "650c2c12-aa98-4ab0-b5aa-7b08d4f141a4",
     "baseRevision": 0,
     "proposedSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
     "proof": {
       "assetId": "cirfmf-template-base",
-      "proposalId": "dfcd7af7-54fb-4ffb-83d2-c5d06f9b9269",
+      "proposalId": "650c2c12-aa98-4ab0-b5aa-7b08d4f141a4",
       "baseRevision": 0,
       "documentGeneration": 2,
       "proposedSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"
@@ -80,6 +80,6 @@
     "pendingProposal": null,
     "draftSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"
   },
-  "screenshotSha256": "f359eb0ed5c38909e2da153225d3f5a6cc5e456bc38a0df6f76600f76b14c6fe",
+  "screenshotSha256": "d95085981198518107ed3b12316d01b19a124ba1df7181e541b34b337c09ec85",
   "runtimeErrors": []
 }
