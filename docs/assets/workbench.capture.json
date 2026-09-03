@@ -4,7 +4,7 @@
   "evidenceScope": "real Chromium with a standards-shaped injected WebMCP harness; not browser-native API or agent proof",
   "manifestSha256": "eb4464501adc0e924377ccd6101d9d7aa509530edd7640ce38e91c9a288ea877",
   "sourceScopeSha256": "5a9e1528f27928389eef34894ef8c2e90f3c8f650558d059a404fb92cec4f371",
-  "screenshotSha256": "3f48ae757b8259f27c87ef2e9ec1e19be32399796348445a1c33b552ade4950f",
+  "screenshotSha256": "6246497fa5885e93c82306c5ac93dde3605e1015723e682fbe30aebfeb810404",
   "corpus": {
     "records": 55,
     "xml": 45,

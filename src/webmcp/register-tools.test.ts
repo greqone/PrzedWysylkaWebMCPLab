@@ -31,6 +31,8 @@ type WebMcpModule = {
 type StoreModule = {
   createWorkspaceStore(options?: {
     canStageReplacements?: (assetId: string) => boolean;
+    createId?: () => string;
+    now?: () => string;
   }): {
     getState(): {
       selectedAssetId: string | null;
@@ -823,6 +825,49 @@ describe("WebMCP registration", () => {
     expect(status.historySummariesTruncated).toBe(true);
     expect(status.pendingProposal?.summaryTruncated).toBe(true);
     expect(status.history.some((entry) => entry.summaryTruncated)).toBe(true);
+  });
+
+  test("omits history when no history entry fits the status budget", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const store = modules.store.createWorkspaceStore({
+      createId: () => "event".repeat(200),
+      now: () => "timestamp".repeat(125),
+    });
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => "<NIP>#nip#</NIP>",
+      validateCurrent: async () => ({
+        valid: false,
+        findings: [],
+        rawOutput: "",
+      }),
+    });
+    const signal = new AbortController().signal;
+    await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "cirfmf-template-base" }, { signal });
+
+    const statusResult = await tools
+      .get("get_workspace_status")
+      ?.execute({}, { signal });
+    const statusText = (statusResult as { content: Array<{ text: string }> })
+      .content[0]?.text;
+    expect(statusText?.length).toBeLessThanOrEqual(1_500);
+    expect(parseTextResult(statusResult)).toMatchObject({
+      historyTotal: 1,
+      historyReturned: 0,
+      historyHasMore: true,
+      historySummariesTruncated: false,
+      history: [],
+    });
   });
 
   test("refuses to stage replacements against an XSD source", async () => {

@@ -166,16 +166,18 @@ function buildStatusPayload(
       const proposalSummary = state.pendingProposal
         ? truncateText(state.pendingProposal.summary, textLimit)
         : null;
-      const history = state.history.slice(-historyCount).map((entry) => {
-        const summary = truncateText(entry.summary, textLimit);
-        return {
-          id: entry.id,
-          at: entry.at,
-          type: entry.type,
-          summary: summary.value,
-          summaryTruncated: summary.truncated,
-        };
-      });
+      const history = state.history
+        .slice(state.history.length - historyCount)
+        .map((entry) => {
+          const summary = truncateText(entry.summary, textLimit);
+          return {
+            id: entry.id,
+            at: entry.at,
+            type: entry.type,
+            summary: summary.value,
+            summaryTruncated: summary.truncated,
+          };
+        });
       const historySummariesTruncated = history.some(
         (entry) => entry.summaryTruncated,
       );
