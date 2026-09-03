@@ -6,9 +6,9 @@
   "sourceScopeSha256": "5a9e1528f27928389eef34894ef8c2e90f3c8f650558d059a404fb92cec4f371",
   "productionArtifact": {
     "algorithm": "directory-sha256-v1",
-    "sha256": "8b741bb006401f23dbe824c77acee171b8f9c3d392752a374241c1029703ce49",
+    "sha256": "3cd8267c3d48305f73fd6f3414266413e0ff39b0948414b7a408c118be0de6e9",
     "fileCount": 66,
-    "byteCount": 2187261
+    "byteCount": 2187581
   },
   "corpus": {
     "records": 55,
@@ -49,7 +49,7 @@
   },
   "proposalPreflight": {
     "valid": true,
-    "proposalId": "ca3e7f29-12c2-486d-b50d-44c0c8deb1ef",
+    "proposalId": "dfcd7af7-54fb-4ffb-83d2-c5d06f9b9269",
     "baseRevision": 0,
     "contentSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
     "findingCount": 0
@@ -58,12 +58,12 @@
     "selectedAssetId": "cirfmf-template-base",
     "revision": 0,
     "documentGeneration": 2,
-    "proposalId": "ca3e7f29-12c2-486d-b50d-44c0c8deb1ef",
+    "proposalId": "dfcd7af7-54fb-4ffb-83d2-c5d06f9b9269",
     "baseRevision": 0,
     "proposedSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0",
     "proof": {
       "assetId": "cirfmf-template-base",
-      "proposalId": "ca3e7f29-12c2-486d-b50d-44c0c8deb1ef",
+      "proposalId": "dfcd7af7-54fb-4ffb-83d2-c5d06f9b9269",
       "baseRevision": 0,
       "documentGeneration": 2,
       "proposedSha256": "a41799c158deca1bca74e1a158a0748f401721b0ed4b5731ef1a38cfa087c3f0"

@@ -38,7 +38,7 @@ type StoreModule = {
       selectedAssetId: string | null;
       draftContent: string | null;
       pendingAssetSelection: null | { assetId: string };
-      pendingProposal: null | { proposedContent: string };
+      pendingProposal: null | { proposedContent: string; summary: string };
       proposalValidation: null | {
         proposedSha256: string;
         result: ValidationResult;
@@ -736,6 +736,59 @@ describe("WebMCP registration", () => {
     expect(payload.findings[0]?.fileNameTruncated).toBe(true);
     expect(payload.findings[0]?.message).not.toMatch(/[\uD800-\uDBFF]$/u);
     expect(payload.findings[0]).not.toHaveProperty("raw");
+  });
+
+  test("bounds escaped proposal summaries without failing after staging", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const store = modules.store.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => "<NIP>#nip#</NIP>",
+      validateCurrent: async () => ({
+        valid: false,
+        findings: [],
+        rawOutput: "",
+      }),
+    });
+    const signal = new AbortController().signal;
+    await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "cirfmf-template-base" }, { signal });
+    const summary = "\0\uD800".repeat(250);
+
+    const stagedResult = await tools.get("stage_exact_replacements")?.execute(
+      {
+        summary,
+        replacements: [
+          {
+            search: "#nip#",
+            replacement: "1111111111",
+            reason: "Escaped summary budget regression",
+          },
+        ],
+      },
+      { signal },
+    );
+    const stagedText = (stagedResult as { content: Array<{ text: string }> })
+      .content[0]?.text;
+    expect(stagedText?.length).toBeLessThanOrEqual(1_500);
+    const staged = parseTextResult(stagedResult) as {
+      summary: string;
+      summaryTruncated: boolean;
+    };
+    expect(staged.summaryTruncated).toBe(true);
+    expect(staged.summary.length).toBeLessThan(summary.length);
+    expect(store.getState().pendingProposal?.summary).toBe(summary);
   });
 
   test("bounds adversarial proposal and history summaries with explicit metadata", async () => {

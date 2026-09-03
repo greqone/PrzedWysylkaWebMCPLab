@@ -4,7 +4,11 @@ import { getAsset, listAssets } from "../assets/registry";
 import type { AssetFilter } from "../assets/types";
 import type { ValidationResult } from "../validation/types";
 import { sha256Text } from "../workspace/sha256";
-import type { WorkspaceState, WorkspaceStore } from "../workspace/types";
+import type {
+  PendingProposal,
+  WorkspaceState,
+  WorkspaceStore,
+} from "../workspace/types";
 import {
   MAX_SERIALIZED_TOOL_RESULT_CHARS,
   assertToolPayloadBudget,
@@ -140,6 +144,35 @@ function buildValidationPayload(
     }
   }
   throw new Error("Validation metadata exceeds the WebMCP output budget");
+}
+
+function buildStagedProposalPayload(proposal: PendingProposal): unknown {
+  let lower = 0;
+  let upper = Array.from(proposal.summary).length;
+  let best: unknown = null;
+  while (lower <= upper) {
+    const summaryLimit = Math.floor((lower + upper) / 2);
+    const summary = truncateText(proposal.summary, summaryLimit);
+    const payload = {
+      status: "pending-human-approval",
+      proposalId: proposal.id,
+      baseRevision: proposal.baseRevision,
+      replacementCount: proposal.replacements.length,
+      summary: summary.value,
+      summaryTruncated: summary.truncated,
+    };
+    if (JSON.stringify(payload).length <= MAX_SERIALIZED_TOOL_RESULT_CHARS) {
+      best = payload;
+      lower = summaryLimit + 1;
+    } else {
+      upper = summaryLimit - 1;
+    }
+  }
+  if (best !== null) {
+    assertToolPayloadBudget(best, "stage_exact_replacements result");
+    return best;
+  }
+  throw new Error("Proposal metadata exceeds the WebMCP output budget");
 }
 
 interface WorkspaceHashes {
@@ -569,13 +602,7 @@ export async function registerWebMcpTools(
         }
         const proposal = store.stageProposal(replacementInput.parse(input));
         return boundedTextToolResult(
-          {
-            status: "pending-human-approval",
-            proposalId: proposal.id,
-            baseRevision: proposal.baseRevision,
-            replacementCount: proposal.replacements.length,
-            summary: proposal.summary,
-          },
+          buildStagedProposalPayload(proposal),
           "stage_exact_replacements result",
         );
       },
