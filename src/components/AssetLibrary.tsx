@@ -34,6 +34,7 @@ export function AssetLibrary({
 }: AssetLibraryProps) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<AssetKind | "all">("all");
+  const searchInput = useRef<HTMLInputElement | null>(null);
   const selectedElement = useRef<HTMLButtonElement | null>(null);
 
   const filtered = useMemo(() => {
@@ -48,15 +49,39 @@ export function AssetLibrary({
   }, [assets, kind, query]);
 
   useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.key !== "/" ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey
+      ) {
+        return;
+      }
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.matches("input, textarea, select, [role='textbox']"))
+      ) {
+        return;
+      }
+      event.preventDefault();
+      searchInput.current?.focus();
+    };
+    document.addEventListener("keydown", focusSearch);
+    return () => document.removeEventListener("keydown", focusSearch);
+  }, []);
+
+  useEffect(() => {
     const element = selectedElement.current;
     const container = element?.parentElement;
     if (!element || !container) return;
 
     const itemTop = element.offsetTop - container.offsetTop;
-    container.scrollTop = Math.max(
-      0,
-      itemTop - (container.clientHeight - element.offsetHeight) / 2,
-    );
+    container.scrollTop = Math.max(0, itemTop - element.offsetHeight * 3);
   }, [selectedId]);
 
   return (
@@ -76,12 +101,14 @@ export function AssetLibrary({
         <span className="visually-hidden">Search official assets</span>
         <span aria-hidden="true">⌕</span>
         <input
+          ref={searchInput}
           type="search"
+          aria-keyshortcuts="/"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search corpus"
         />
-        <kbd>/</kbd>
+        <kbd aria-hidden="true">/</kbd>
       </label>
 
       <div className="filter-tabs" aria-label="Filter assets by type">
@@ -125,7 +152,7 @@ export function AssetLibrary({
                 </span>
               </span>
               <span className="asset-chevron" aria-hidden="true">
-                {loading ? "···" : "›"}
+                {loading ? "···" : selected ? "✓" : "›"}
               </span>
             </button>
           );

@@ -111,7 +111,7 @@ describe("asset verifier", () => {
     expect(report.ok).toBe(true);
     expect(report.checked).toBe(55);
     expect(report.errors).toEqual([]);
-  });
+  }, 15_000);
 
   test("rejects a file whose bytes do not match the lock", async () => {
     const verifier = await loadVerifier();

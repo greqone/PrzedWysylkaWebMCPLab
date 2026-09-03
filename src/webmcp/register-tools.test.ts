@@ -7,12 +7,18 @@ type Registered = {
   options?: WebMCP.ModelContextRegisterToolOptions;
 };
 
+type SchemaNode = {
+  maxLength?: number;
+  properties?: Record<string, SchemaNode>;
+  items?: SchemaNode;
+};
+
 type WebMcpModule = {
   registerWebMcpTools(
     store: unknown,
     dependencies: {
       modelContext?: Pick<WebMCP.ModelContext, "registerTool">;
-      loadAssetText(id: string): Promise<string>;
+      loadAssetText(id: string, signal?: AbortSignal): Promise<string>;
       validateCurrent(
         content: string,
         fileName: string,
@@ -27,7 +33,9 @@ type StoreModule = {
     canStageReplacements?: (assetId: string) => boolean;
   }): {
     getState(): {
+      selectedAssetId: string | null;
       draftContent: string | null;
+      pendingAssetSelection: null | { assetId: string };
       pendingProposal: null | { proposedContent: string };
       proposalValidation: null | {
         proposedSha256: string;
@@ -35,6 +43,7 @@ type StoreModule = {
       };
     };
     approveProposal(proposalId: string): void;
+    rejectProposal(proposalId: string): void;
   };
 };
 
@@ -56,6 +65,16 @@ function parseTextResult(result: unknown): unknown {
   const output = result as { content: Array<{ type: string; text: string }> };
   expect(output.content[0]?.type).toBe("text");
   return JSON.parse(output.content[0]?.text ?? "null");
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
 }
 
 describe("WebMCP registration", () => {
@@ -93,6 +112,28 @@ describe("WebMCP registration", () => {
       "stage_exact_replacements",
       "get_workspace_status",
     ]);
+    const schemas = new Map(
+      registered.map(({ tool }) => [tool.name, tool.inputSchema as SchemaNode]),
+    );
+    expect(schemas.get("list_official_assets")?.properties?.role).toMatchObject(
+      {
+        maxLength: 80,
+      },
+    );
+    expect(
+      schemas.get("list_official_assets")?.properties?.search,
+    ).toMatchObject({ maxLength: 200 });
+    expect(
+      schemas.get("read_official_asset")?.properties?.assetId,
+    ).toMatchObject({ maxLength: 128 });
+    expect(
+      schemas.get("select_official_asset")?.properties?.assetId,
+    ).toMatchObject({ maxLength: 128 });
+    const replacementItem = schemas.get("stage_exact_replacements")?.properties
+      ?.replacements?.items;
+    expect(replacementItem?.properties?.search?.maxLength).toBe(20_000);
+    expect(replacementItem?.properties?.replacement?.maxLength).toBe(100_000);
+    expect(replacementItem?.properties?.reason?.maxLength).toBe(500);
     expect(registered.some(({ tool }) => tool.name.includes("approve"))).toBe(
       false,
     );
@@ -147,14 +188,24 @@ describe("WebMCP registration", () => {
     ).content[0]?.text;
     expect(catalogText?.length).toBeLessThanOrEqual(1500);
 
-    const finalPage = parseTextResult(
-      await registered
+    let nextCatalogOffset: number | null = 0;
+    let finalPage: typeof catalog | null = null;
+    while (nextCatalogOffset !== null) {
+      const pageResult = await registered
         .find(({ tool }) => tool.name === "list_official_assets")
         ?.tool.execute(
-          { offset: 54, limit: 6 },
+          { offset: nextCatalogOffset, limit: 6 },
           { signal: new AbortController().signal },
-        ),
-    ) as typeof catalog;
+        );
+      const pageText = (
+        pageResult as {
+          content: Array<{ text: string }>;
+        }
+      ).content[0]?.text;
+      expect(pageText?.length).toBeLessThanOrEqual(1_500);
+      finalPage = parseTextResult(pageResult) as typeof catalog;
+      nextCatalogOffset = finalPage.nextOffset;
+    }
     expect(finalPage).toMatchObject({
       total: 55,
       returned: 1,
@@ -203,6 +254,58 @@ describe("WebMCP registration", () => {
       target: "approved-draft",
       valid: false,
       revision: 0,
+    });
+  });
+
+  test("does not commit an asset selection aborted during its load", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const pendingLoad = deferred<string>();
+    let receivedSignal: AbortSignal | undefined;
+    const store = modules.store.createWorkspaceStore();
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async (_id, signal) => {
+        receivedSignal = signal;
+        return pendingLoad.promise;
+      },
+      validateCurrent: async () => ({
+        valid: true,
+        findings: [],
+        rawOutput: "",
+      }),
+    });
+    const controller = new AbortController();
+    const selection = tools
+      .get("select_official_asset")
+      ?.execute(
+        { assetId: "cirfmf-template-base" },
+        { signal: controller.signal },
+      );
+    const rejectedSelection = expect(selection).rejects.toMatchObject({
+      name: "AbortError",
+    });
+
+    await Promise.resolve();
+    expect(store.getState().pendingAssetSelection?.assetId).toBe(
+      "cirfmf-template-base",
+    );
+    controller.abort(new DOMException("Selection aborted", "AbortError"));
+    pendingLoad.resolve("<Faktura/>");
+
+    await rejectedSelection;
+    expect(receivedSignal).toBe(controller.signal);
+    expect(store.getState()).toMatchObject({
+      selectedAssetId: null,
+      pendingAssetSelection: null,
+      draftContent: null,
     });
   });
 
@@ -330,6 +433,85 @@ describe("WebMCP registration", () => {
     ).toBeLessThanOrEqual(1500);
   });
 
+  test("round-trips mixed line endings through cursors and stages copied text exactly", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const source = `<Root>\r\n  <A>${"😀".repeat(900)}</A>\r  <B>#nip#</B>\n</Root>`;
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const store = modules.store.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => source,
+      validateCurrent: async () => ({
+        valid: true,
+        findings: [],
+        rawOutput: "",
+      }),
+    });
+    const signal = new AbortController().signal;
+    await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "cirfmf-template-base" }, { signal });
+
+    let nextLine: number | null = 1;
+    let nextColumn: number | null = 0;
+    let reconstructed = "";
+    for (let page = 0; nextLine !== null && page < 20; page += 1) {
+      const result = await tools.get("read_official_asset")?.execute(
+        {
+          assetId: "cirfmf-template-base",
+          startLine: nextLine,
+          startColumn: nextColumn,
+          lineCount: 2,
+        },
+        { signal },
+      );
+      const text = (result as { content: Array<{ text: string }> }).content[0]
+        ?.text;
+      expect(text?.length).toBeLessThanOrEqual(1_500);
+      const payload = parseTextResult(result) as {
+        source: string;
+        nextLine: number | null;
+        nextColumn: number | null;
+      };
+      reconstructed += payload.source;
+      nextLine = payload.nextLine;
+      nextColumn = payload.nextColumn;
+    }
+
+    expect(nextLine).toBeNull();
+    expect(reconstructed).toBe(source);
+    const copiedSearch = reconstructed.slice(
+      reconstructed.indexOf("</A>"),
+      reconstructed.indexOf("</B>") + "</B>".length,
+    );
+    const staged = await tools.get("stage_exact_replacements")?.execute(
+      {
+        summary: "Replace the exact mixed-newline excerpt",
+        replacements: [
+          {
+            search: copiedSearch,
+            replacement: "</A>\r  <B>1111111111</B>",
+            reason: "Prove read-to-stage fidelity",
+          },
+        ],
+      },
+      { signal },
+    );
+    expect(parseTextResult(staged)).toMatchObject({
+      status: "pending-human-approval",
+      replacementCount: 1,
+    });
+  });
+
   test("aborts every registration signal after a partial registration failure", async () => {
     const modules = await loadModules();
     expect(modules, "WebMCP and store modules must exist").not.toBeNull();
@@ -454,8 +636,193 @@ describe("WebMCP registration", () => {
       result: { valid: true },
     });
 
+    const status = parseTextResult(
+      await tools.get("get_workspace_status")?.execute({}, { signal }),
+    ) as {
+      documentGeneration: number;
+      pendingProposal: {
+        id: string;
+        baseRevision: number;
+        proposedSha256: string;
+        validation: {
+          assetId: string;
+          proposalId: string;
+          baseRevision: number;
+          documentGeneration: number;
+          proposedSha256: string;
+        };
+      };
+    };
+    expect(status).toMatchObject({
+      documentGeneration: 1,
+      pendingProposal: {
+        id: staged.proposalId,
+        baseRevision: 0,
+        proposedSha256: preflight.contentSha256,
+        validation: {
+          assetId: "cirfmf-template-base",
+          proposalId: staged.proposalId,
+          baseRevision: 0,
+          documentGeneration: 1,
+          proposedSha256: preflight.contentSha256,
+        },
+      },
+    });
+
     store.approveProposal(staged.proposalId);
     expect(store.getState().draftContent).toBe("<NIP>1111111111</NIP>");
+  });
+
+  test("bounds long validation diagnostics without silently dropping detail", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const store = modules.store.createWorkspaceStore();
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => "<NIP>#nip#</NIP>",
+      validateCurrent: async () => ({
+        valid: false,
+        findings: [
+          {
+            fileName: "f".repeat(500),
+            line: 1,
+            message: "😀".repeat(8_000),
+            raw: "raw".repeat(8_000),
+          },
+        ],
+        rawOutput: "raw".repeat(8_000),
+      }),
+    });
+    const signal = new AbortController().signal;
+    await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "cirfmf-template-base" }, { signal });
+
+    const result = await tools
+      .get("validate_workspace")
+      ?.execute({}, { signal });
+    const text = (result as { content: Array<{ text: string }> }).content[0]
+      ?.text;
+    expect(text?.length).toBeLessThanOrEqual(1_500);
+    const payload = parseTextResult(result) as {
+      findingCount: number;
+      returnedFindings: number;
+      truncated: boolean;
+      findingTextTruncated: boolean;
+      findings: Array<{
+        fileName: string | null;
+        fileNameTruncated: boolean;
+        message: string;
+        messageTruncated: boolean;
+        raw?: string;
+      }>;
+    };
+    expect(payload).toMatchObject({
+      findingCount: 1,
+      returnedFindings: 1,
+      truncated: true,
+      findingTextTruncated: true,
+    });
+    expect(payload.findings[0]?.messageTruncated).toBe(true);
+    expect(payload.findings[0]?.fileNameTruncated).toBe(true);
+    expect(payload.findings[0]?.message).not.toMatch(/[\uD800-\uDBFF]$/u);
+    expect(payload.findings[0]).not.toHaveProperty("raw");
+  });
+
+  test("bounds adversarial proposal and history summaries with explicit metadata", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const store = modules.store.createWorkspaceStore({
+      canStageReplacements: () => true,
+    });
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => "<NIP>#nip#</NIP>",
+      validateCurrent: async () => ({
+        valid: false,
+        findings: [],
+        rawOutput: "",
+      }),
+    });
+    const signal = new AbortController().signal;
+    const selected = await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "cirfmf-template-base" }, { signal });
+    expect(
+      (selected as { content: Array<{ text: string }> }).content[0]?.text
+        .length,
+    ).toBeLessThanOrEqual(1_500);
+
+    for (let index = 0; index < 4; index += 1) {
+      const stagedResult = await tools.get("stage_exact_replacements")?.execute(
+        {
+          summary: `${index}${"s".repeat(499)}`,
+          replacements: [
+            {
+              search: "#nip#",
+              replacement: "1111111111",
+              reason: "Budget regression",
+            },
+          ],
+        },
+        { signal },
+      );
+      expect(
+        (stagedResult as { content: Array<{ text: string }> }).content[0]?.text
+          .length,
+      ).toBeLessThanOrEqual(1_500);
+      const staged = parseTextResult(stagedResult) as { proposalId: string };
+      store.rejectProposal(staged.proposalId);
+    }
+
+    await tools.get("stage_exact_replacements")?.execute(
+      {
+        summary: "p".repeat(500),
+        replacements: [
+          {
+            search: "#nip#",
+            replacement: "1111111111",
+            reason: "Pending summary budget regression",
+          },
+        ],
+      },
+      { signal },
+    );
+
+    const statusResult = await tools
+      .get("get_workspace_status")
+      ?.execute({}, { signal });
+    const statusText = (statusResult as { content: Array<{ text: string }> })
+      .content[0]?.text;
+    expect(statusText?.length).toBeLessThanOrEqual(1_500);
+    const status = parseTextResult(statusResult) as {
+      historyTotal: number;
+      historyReturned: number;
+      historyHasMore: boolean;
+      historySummariesTruncated: boolean;
+      pendingProposal: { summaryTruncated: boolean } | null;
+      history: Array<{ summary: string; summaryTruncated: boolean }>;
+    };
+    expect(status.historyTotal).toBe(10);
+    expect(status.historyReturned).toBe(status.history.length);
+    expect(status.historyHasMore).toBe(true);
+    expect(status.historySummariesTruncated).toBe(true);
+    expect(status.pendingProposal?.summaryTruncated).toBe(true);
+    expect(status.history.some((entry) => entry.summaryTruncated)).toBe(true);
   });
 
   test("refuses to stage replacements against an XSD source", async () => {

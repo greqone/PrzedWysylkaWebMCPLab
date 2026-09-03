@@ -9,6 +9,23 @@ import { describe, expect, test } from "vitest";
 const root = resolve(import.meta.dirname, "..");
 
 describe("demo capture safety", () => {
+  test("uses race-safe bounded cleanup for its owned preview", () => {
+    const source = readFileSync(
+      resolve(root, "scripts/capture-demo.mjs"),
+      "utf8",
+    );
+
+    expect(source).toContain("const serverClosed = new Promise");
+    expect(source).toContain('server.once("close"');
+    expect(source).toContain("await waitForServerClose");
+    expect(source).toContain('server.kill("SIGKILL")');
+    expect(source).not.toContain('once(server, "exit"');
+    expect(source).not.toContain('from "node:events"');
+    expect(source).toMatch(
+      /finally\s*\{\s*try\s*\{\s*await browser\?\.close\(\);\s*\}\s*finally\s*\{\s*await stopOwnedPreview\(\);/su,
+    );
+  });
+
   test("rejects DEMO_URL before navigation or screenshot overwrite", () => {
     const screenshot = resolve(root, "docs/assets/workbench.png");
     const evidence = resolve(root, "docs/assets/workbench.capture.json");

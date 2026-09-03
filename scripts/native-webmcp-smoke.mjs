@@ -1,15 +1,19 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { chromium } from "playwright";
+
+import { hashDirectory } from "./artifact-digest.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const baseUrl = "http://127.0.0.1:4176";
 const evidencePath = resolve(root, "docs/assets/native-webmcp-smoke.json");
 const screenshotPath = resolve(root, "docs/assets/native-workbench.png");
+const manifestPath = resolve(root, "data/official-assets.lock.json");
+const sourceScopePath = resolve(root, "data/official-source-scope.json");
 const expectedToolNames = [
   "get_workspace_status",
   "list_official_assets",
@@ -26,6 +30,24 @@ const ansiColorPattern = new RegExp(
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+const expectedNodeVersion = `v${(
+  await readFile(resolve(root, ".nvmrc"), "utf8")
+).trim()}`;
+assert(
+  process.version === expectedNodeVersion,
+  `Native evidence requires Node ${expectedNodeVersion}, received ${process.version}`,
+);
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const [manifestBytes, sourceScopeBytes, productionArtifact] = await Promise.all(
+  [
+    readFile(manifestPath),
+    readFile(sourceScopePath),
+    hashDirectory(resolve(root, "dist")),
+  ],
+);
+const manifest = JSON.parse(manifestBytes.toString("utf8"));
+const fa3Namespace = "http://crd.gov.pl/wzor/2025/06/25/13775/";
 
 function chromeCandidates() {
   const candidates = [];
@@ -328,7 +350,7 @@ try {
   const approvalDisabledBeforePreflight = await approveButton.isDisabled();
   assert(
     approvalDisabledBeforePreflight,
-    "Human approval must be disabled before proposal preflight",
+    "UI approval must be disabled before proposal preflight",
   );
 
   const proposalPreflight = await executeTool(page, "validate_workspace", {
@@ -346,12 +368,37 @@ try {
     /^[a-f0-9]{64}$/u.test(proposalPreflight.contentSha256),
     "Proposal preflight did not return a SHA-256 binding",
   );
+  const proposalStatus = await executeTool(page, "get_workspace_status", {});
+  const proposalProof = proposalStatus.pendingProposal?.validation;
+  assert(
+    proposalStatus.selectedAssetId === "cirfmf-template-base" &&
+      proposalStatus.revision === staged.baseRevision &&
+      Number.isInteger(proposalStatus.documentGeneration) &&
+      proposalStatus.documentGeneration > 0,
+    "Pending proposal status is bound to the wrong workspace generation",
+  );
+  assert(
+    proposalStatus.pendingProposal?.id === staged.proposalId &&
+      proposalStatus.pendingProposal?.baseRevision === staged.baseRevision &&
+      proposalStatus.pendingProposal?.proposedSha256 ===
+        proposalPreflight.contentSha256,
+    "Pending proposal status does not match the staged preflight",
+  );
+  assert(
+    proposalProof?.assetId === "cirfmf-template-base" &&
+      proposalProof?.proposalId === staged.proposalId &&
+      proposalProof?.baseRevision === staged.baseRevision &&
+      proposalProof?.documentGeneration === proposalStatus.documentGeneration &&
+      proposalProof?.proposedSha256 === proposalPreflight.contentSha256 &&
+      proposalProof?.valid === true,
+    "Store-owned proposal proof is not fully bound to the pending proposal",
+  );
   await page
     .getByText("Schema valid before approval", { exact: true })
     .waitFor({ state: "visible" });
   assert(
     await approveButton.isEnabled(),
-    "Human approval did not unlock after proof",
+    "UI approval did not unlock after proof",
   );
   const screenshotBytes = await page.screenshot({ fullPage: false });
 
@@ -365,11 +412,34 @@ try {
     runtimeErrors.length === 0,
     `Browser runtime errors:\n${runtimeErrors.join("\n")}`,
   );
+  assert(
+    after.draftSha256 === proposalPreflight.contentSha256,
+    "Applied draft hash does not match the validated proposal hash",
+  );
+  const corpus = {
+    records: manifest.assets.length,
+    xml: manifest.assets.filter((asset) => asset.kind === "xml").length,
+    xsd: manifest.assets.filter((asset) => asset.kind === "xsd").length,
+    fa3Xml: manifest.assets.filter(
+      (asset) => asset.kind === "xml" && asset.namespace === fa3Namespace,
+    ).length,
+  };
+  assert(
+    corpus.records === 55 &&
+      corpus.xml === 45 &&
+      corpus.xsd === 10 &&
+      corpus.fa3Xml === 44,
+    `Unexpected native evidence corpus: ${JSON.stringify(corpus)}`,
+  );
 
-  const sha256 = (value) => createHash("sha256").update(value).digest("hex");
   const evidence = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedBy: "npm run smoke:native",
+    nodeVersion: process.version,
+    manifestSha256: sha256(manifestBytes),
+    sourceScopeSha256: sha256(sourceScopeBytes),
+    productionArtifact,
+    corpus,
     chromeVersion,
     featureFlag: "WebMCPTesting",
     nativeModelContext,
@@ -377,6 +447,8 @@ try {
     toolCount: toolNames.length,
     toolNames,
     hasAgentApprovalTool: agentApprovalTools.length > 0,
+    selectedAssetId: proposalStatus.selectedAssetId,
+    documentGeneration: proposalStatus.documentGeneration,
     catalog: {
       total: catalog.total,
       returned: catalog.returned,
@@ -398,6 +470,21 @@ try {
       baseRevision: staged.baseRevision,
       contentSha256: proposalPreflight.contentSha256,
       findingCount: proposalPreflight.findingCount,
+    },
+    proposalStatus: {
+      selectedAssetId: proposalStatus.selectedAssetId,
+      revision: proposalStatus.revision,
+      documentGeneration: proposalStatus.documentGeneration,
+      proposalId: proposalStatus.pendingProposal.id,
+      baseRevision: proposalStatus.pendingProposal.baseRevision,
+      proposedSha256: proposalStatus.pendingProposal.proposedSha256,
+      proof: {
+        assetId: proposalProof.assetId,
+        proposalId: proposalProof.proposalId,
+        baseRevision: proposalProof.baseRevision,
+        documentGeneration: proposalProof.documentGeneration,
+        proposedSha256: proposalProof.proposedSha256,
+      },
     },
     approval: {
       disabledBeforePreflight: approvalDisabledBeforePreflight,

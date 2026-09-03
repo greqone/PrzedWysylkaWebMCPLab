@@ -48,7 +48,7 @@ WebMCP registration is feature-detected. Unsupported browsers show an honest com
 - `stage_exact_replacements`: validates a bounded list of exact search/replacement operations and stages a proposal. It never mutates the approved draft.
 - `get_workspace_status`: returns selected asset, hashes, validation summary, pending state, and history metadata; read-only.
 
-There is deliberately no agent-callable `approve`, `apply`, `download`, or network tool. Approval and rejection are human-only UI events.
+There is deliberately no WebMCP-callable `approve`, `apply`, `download`, or network tool. Approval and rejection remain visible UI events; the application does not infer actor identity from the event source.
 
 Tool callbacks validate their own input because native input-schema validation remains an open part of the experimental specification. Tool descriptions contain only static developer-authored text; XML content is marked untrusted when returned.
 

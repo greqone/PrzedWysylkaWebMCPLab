@@ -2,7 +2,7 @@
 
 ## Goal
 
-Provide one shared, visible browser workspace in which a human and an agent can inspect official FA(3) sources, run the same canonical validation, and review exact changes without granting the agent authority to finalize them.
+Provide one shared, visible browser workspace in which a person and an agent can inspect official FA(3) sources, run the same canonical validation, and review exact changes without exposing finalization through the WebMCP capability surface.
 
 ## Runtime boundaries
 
@@ -19,7 +19,7 @@ flowchart LR
   T --> R
   T --> V
   W --> P[Proposal proof: ID + revision + generation + SHA-256]
-  H[Human approval controls] --> W
+  H[Visible UI approval controls] --> W
 ```
 
 ### Asset registry
@@ -49,7 +49,7 @@ Invalid documents resolve to `valid: false`. Schema/runtime failures reject. The
 `src/workspace/store.ts` is framework-independent and owns:
 
 - immutable original source;
-- current human-approved draft;
+- current approved draft;
 - monotonically increasing revision;
 - monotonically increasing document generation across selection and approval;
 - latest-wins selection and validation operation tokens;
@@ -66,11 +66,11 @@ Approval requires the current asset ID, proposal ID, revision, document generati
 
 ### WebMCP bridge
 
-`src/webmcp/register-tools.ts` registers exactly six tools using `document.modelContext.registerTool()`. Read-only and state-changing tools declare `readOnlyHint` explicitly; validation diagnostics are marked untrusted. One `AbortController` owns their lifecycle, and aborting it unregisters every successful partial registration through the WebMCP signal contract if any registration fails. The callback accepts a browser-provided cancellation signal when present and creates a local signal when the native caller omits the optional execution-options argument.
+`src/webmcp/register-tools.ts` registers exactly six tools using `document.modelContext.registerTool()`. Read-only and state-changing tools declare `readOnlyHint` explicitly; validation diagnostics are marked untrusted. One `AbortController` owns their registration lifecycle, and aborting it unregisters every successful partial registration if registration fails. Execution callbacks accept the browser-provided cancellation signal when present and create a local signal when the native caller omits the optional options argument. Read and selection callbacks pass that signal into the locked asset loader and check it again after loading; cancellation removes pending selection state and prevents a post-abort selection commit even if a loader ignores the signal and resolves later.
 
-`validate_workspace` routes both validation targets through the same canonical adapter. For a pending proposal it returns `proposalId`, SHA-256, validity, full finding count, and a bounded finding page while persisting the proof into shared UI state. List, finding, and history responses expose explicit totals and continuation metadata. Source reads additionally enforce a 1,500-character serialized payload ceiling and return a line-and-column cursor, so even a single minified XML/XSD line remains completely reachable rather than silently truncated.
+`validate_workspace` routes both validation targets through the same canonical adapter. For a pending proposal it returns `proposalId`, SHA-256, validity, full finding count, and a compact finding page while persisting the proof into shared UI state. Every successful tool text payload has a hard 1,500-character postcondition. Finding messages, proposal summaries, and history summaries report text truncation explicitly; status also reports omitted history. Source reads slice the original decoded string without newline reconstruction, preserve CRLF/LF/CR delimiters, and return a line plus UTF-16 code-unit column cursor. Consecutive reads therefore reconstruct exact source text, including minified lines and non-BMP characters.
 
-The bridge deliberately omits approval, rejection, download, arbitrary file upload, network access, and KSeF submission. The agent can stage work; only the human UI can cross the approval boundary.
+The bridge deliberately omits approval, rejection, download, arbitrary file upload, network access, and KSeF submission. WebMCP can stage work; applying it requires the visible UI review control. The application does not infer actor identity from a browser-generated click.
 
 The API is feature-detected. Deterministic E2E tests inject a standards-shaped `ModelContext` harness before page load; production never installs a fallback API. A separate production-build smoke launches system Chrome with `WebMCPTesting` and drives native `getTools()` / `executeTool()` without that harness.[1][2]
 
@@ -82,27 +82,27 @@ The UI consumes the same store and domain functions as WebMCP callbacks. There i
 
 - Left: complete first-party corpus and provenance-aware selection.
 - Center: escaped source text and approved revision.
-- Right: explicitly scoped approved-draft validation, proposal SHA-256 preflight, pending diff, human controls, audit trail, and provenance.
+- Right: explicitly scoped approved-draft validation, proposal SHA-256 preflight, pending diff, visible UI controls, audit trail, and provenance.
 
 ## Threat controls
 
-| Threat                            | Control                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| Prompt injection inside XML       | Returned source is marked untrusted; XML is data, never tool description text   |
-| Agent silently mutates a document | Tools can stage only; no approval tool exists                                   |
-| Ambiguous search/replace          | Every search must appear exactly once and all ranges must be non-overlapping    |
-| Stale proposal                    | Proposal ID and base revision are checked at approval                           |
-| Stale or mismatched proof         | ID, revision, generation, and valid result must match the current proposal      |
-| Stale asynchronous selection      | Latest-wins operation token rejects out-of-order load completion                |
-| Stale/concurrent validation       | Document generation plus latest operation token reject older results            |
-| Schema substitution               | Canonical schema IDs and all source hashes are locked                           |
-| Runtime asset substitution        | Every fetched body must match locked SHA-256 and exact byte count before decode |
-| Runtime asset path traversal      | Strict path-segment validation runs at manifest parse and immediately pre-fetch |
-| Caller bypasses mutation policy   | Store defaults deny and consults the typed-registry eligibility resolver        |
-| Line-ending corruption            | Official assets use Git `-text -diff`; fresh-clone hash verification is tested  |
-| Browser without WebMCP            | Honest unsupported status; human UI remains functional                          |
-| XML-as-HTML injection             | Source is rendered as React text nodes inside `<pre>`                           |
-| Data exfiltration by app backend  | There is no backend, upload, account, analytics, or application API             |
+| Threat                            | Control                                                                          |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| Prompt injection inside XML       | Returned source is marked untrusted; XML is data, never tool description text    |
+| WebMCP silently finalizes a draft | Tools can stage only; no approval tool exists                                    |
+| Ambiguous search/replace          | Every search must appear exactly once and all ranges must be non-overlapping     |
+| Stale proposal                    | Proposal ID and base revision are checked at approval                            |
+| Stale or mismatched proof         | ID, revision, generation, and valid result must match the current proposal       |
+| Stale or cancelled selection      | Latest-wins token plus abort checks reject out-of-order or post-abort completion |
+| Stale/concurrent validation       | Document generation plus latest operation token reject older results             |
+| Schema substitution               | Canonical schema IDs and all source hashes are locked                            |
+| Runtime asset substitution        | Every fetched body must match locked SHA-256 and exact byte count before decode  |
+| Runtime asset path traversal      | Strict path-segment validation runs at manifest parse and immediately pre-fetch  |
+| Caller bypasses mutation policy   | Store defaults deny and consults the typed-registry eligibility resolver         |
+| Line-ending corruption            | Git preserves source bytes; cursor excerpts preserve decoded CRLF/LF/CR exactly  |
+| Browser without WebMCP            | Honest unsupported status; the visible UI remains functional                     |
+| XML-as-HTML injection             | Source is rendered as React text nodes inside `<pre>`                            |
+| Data exfiltration by app backend  | There is no backend, upload, account, analytics, or application API              |
 
 ## Build artifact
 
@@ -114,6 +114,8 @@ Vite emits a static SPA containing:
 - all locked XML/XSD assets.
 
 Source maps are disabled. Production headers restrict scripts, workers, frames, forms, object embedding, and browser capabilities; the top-level document is origin-isolated for WebMCP.
+
+The native smoke binds pre-commit evidence to the exact production output with the deterministic `directory-sha256-v1` digest. Its schema-version-2 JSON also binds the corpus manifest, source-scope ledger, screenshot, native tool set, proposal proof tuple, and final applied draft hash. The committed evidence test rebuilds `dist` in production mode and recomputes every declared digest.
 
 ## Sources
 

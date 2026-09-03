@@ -13,7 +13,7 @@
 - Baseline commit: `566b7e89edeb68e4852a4bc9a788eb2ddb0813c0`.
 - Preserve exactly six imperative top-level WebMCP tools.
 - Preserve all 55 immutable official asset records and canonical CRD validation.
-- Approval, rejection, and download remain human-only.
+- Approval, rejection, and download remain absent from WebMCP and visible in the UI.
 - No customer XML upload, backend, account, telemetry, KSeF call, or extra dependency.
 - Do not publish, deploy, submit, commit, or push without a separate operator instruction.
 - Every code task follows RED → GREEN → focused regression before the broad gates.
@@ -411,7 +411,7 @@ npm test -- tests/native-webmcp-smoke.test.ts
 npm run smoke:native
 ```
 
-Expected: native evidence records six tools, invalid → valid proposal proof → automated traversal of the human-only UI gate → valid revision, with no runtime errors.
+Expected: native evidence records six tools, invalid → valid proposal proof → automated traversal of the UI-only review gate → valid revision, with no runtime errors.
 
 ---
 

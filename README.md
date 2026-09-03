@@ -2,11 +2,11 @@
 
 **Agent proposes. Schema proves. Human approves.**
 
-PrzedWysylka WebMCP Lab is a browser-local FA(3) XML workbench where a person and a browser agent share the same official source, validator, pending diff, and audit trail. The agent can prepare exact work. It cannot approve, reject, or download anything.
+PrzedWysylka WebMCP Lab is a browser-local FA(3) XML workbench where a person and a browser agent share the same official source, validator, pending diff, and audit trail. Through WebMCP, the agent can prepare exact work; approval, rejection, and download are absent from the WebMCP capability surface and remain visible UI actions.
 
-![Native Chrome WebMCP evidence: invalid approved draft beside a schema-valid pending proposal and human-only approval controls](docs/assets/native-workbench.png)
+![Native Chrome WebMCP workflow capture: invalid approved draft beside a schema-valid pending proposal and UI-only review controls](docs/assets/native-workbench.png)
 
-This is a production-build native Chrome capture, not a mock or injected API. [`docs/assets/native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json) records Chrome `152.0.7977.64`, `nativeModelContext: true`, `injectedHarness: false`, exactly six tools, an invalid Revision 0, a proposal-bound SHA-256 preflight, an automated Playwright click through the human-only approval control, and a valid Revision 1 with no browser errors. The smoke proves the browser's native registration, callback, and UI-gate paths; it does not claim that a person approved this automated test or that an AI model chose the right tools unaided.
+This is a production-build native Chrome capture, not a mock or injected API. [`docs/assets/native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json) uses evidence schema version 2 and records Node `22.22.2`, Chrome `152.0.7977.64`, `nativeModelContext: true`, `injectedHarness: false`, exactly six tools, a deterministic production-artifact digest, manifest/source-scope/screenshot hashes, an invalid Revision 0, and a valid Revision 1 with no browser errors. The smoke asserts that the preflight hash, pending-status hash, store-proof hash, and final draft hash are equal. It uses an automated Playwright click through the visible UI review control, so it proves the browser's native registration, callback, proof, and UI-gate paths; it does not claim that a person approved this automated test or that an AI model chose the right tools unaided. Like any web interface, browser automation may still actuate UI controls under the browser's own safety policies; this application does not infer a physical human from a click.
 
 > **Publication gate:** the repository does not invent a live deployment or YouTube URL. Those remain explicit operator actions and must be filled in before submission.
 
@@ -42,13 +42,13 @@ The page already owns the source, schema bundle, validator, and revision state. 
 | Tool                       | Effect                                                    | Explicit output boundary                                             |
 | -------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------- |
 | `list_official_assets`     | Lists filtered locked corpus records                      | Up to 6 per page; returns total, offset, `hasMore`, and `nextOffset` |
-| `read_official_asset`      | Reads an official source excerpt                          | Up to 30 lines and 1,500 serialized characters; line/column cursor   |
+| `read_official_asset`      | Reads an official source excerpt                          | Up to 30 lines; original delimiters; line/UTF-16-column cursor       |
 | `select_official_asset`    | Synchronizes the shared UI selection                      | One locked asset; never accepts arbitrary paths or bytes             |
-| `validate_workspace`       | Validates the approved draft or exact pending proposal    | Returns full finding count and at most 5 finding objects             |
+| `validate_workspace`       | Validates the approved draft or exact pending proposal    | Full count plus up to 5 compact findings with explicit truncation    |
 | `stage_exact_replacements` | Creates an atomic pending proposal                        | 1–20 exact replacements; never applies them                          |
-| `get_workspace_status`     | Reads revision, hashes, validation, proposal, and history | Returns total history count and the latest 8 events                  |
+| `get_workspace_status`     | Reads revision, hashes, validation, proposal, and history | Dynamically fits up to 8 newest events and reports omitted history   |
 
-Tool inputs are checked with Zod in the callback. Descriptions are static developer-authored strings. Official XML is returned as untrusted source data, and read-only tools declare `readOnlyHint`.[3]
+Every successful WebMCP text payload is hard-limited to 1,500 serialized characters. Validation compacts untrusted diagnostic text at Unicode code-point boundaries and reports `messageTruncated`; status reports `historyHasMore`, aggregate summary truncation, and per-summary truncation. Source pages preserve the original CRLF, LF, and CR delimiters so consecutive cursor reads reconstruct the exact decoded source. Tool inputs are checked with Zod in the callback. Descriptions are static developer-authored strings. Official XML is returned as untrusted source data, and read-only tools declare `readOnlyHint`.[3]
 
 ## Complete official corpus
 
@@ -82,11 +82,11 @@ The bundled XML/XSD files are excluded from this repository's MIT license. See t
 - Original assets are immutable; proposals target the current approved revision.
 - The workspace store defaults to denying replacement proposals unless the typed registry marks the selected source as eligible FA(3) XML.
 - Runtime asset paths reject traversal, encoded path segments, backslashes, queries, and fragments before fetch.
-- Latest-wins selection and validation operation tokens reject out-of-order or stale asynchronous completions.
+- Latest-wins selection and validation operation tokens reject out-of-order or stale asynchronous completions. WebMCP forwards the browser's `AbortSignal` into asset fetches, checks it after asynchronous loading, and a cancelled selection cannot commit after cancellation even if a dependency resolves later.
 - Stale, ambiguous, duplicate, missing, or overlapping replacements fail atomically.
 - XML is rendered as escaped text, never injected as HTML.
 - The production WebMCP API is feature-detected. Unsupported browsers receive an honest status; no polyfill pretends native support.
-- Approval, rejection, and download exist only as human UI actions.
+- Approval, rejection, and download are absent from the WebMCP tool surface and remain visible UI actions.
 
 ## Clean-room public boundary
 
@@ -129,7 +129,7 @@ npm run smoke:native    # production build + system Chrome native modelContext +
 
 `npm run test:e2e` and `npm run capture:demo` use a standards-shaped injected WebMCP harness. They deterministically test registration, callbacks, shared state, the manual fallback, and accessibility, but the injected harness does not prove browser-native WebMCP API, permission, or agent compatibility.
 
-`npm run smoke:native` builds the production app, starts an owned Vite preview, discovers system Chrome (or `WEBMCP_CHROME_PATH`), enables only `WebMCPTesting`, and drives the real `document.modelContext.getTools()` / `executeTool()` path. It invokes all six callbacks, proves there is no approval tool, validates the approved draft and pending proposal, captures the enabled human gate, uses Playwright to click that UI control, waits for valid Revision 1, writes [`native-webmcp-smoke.json`](docs/assets/native-webmcp-smoke.json), and binds [`native-workbench.png`](docs/assets/native-workbench.png) by SHA-256.
+`npm run smoke:native` requires the exact `.nvmrc` runtime, builds the production app, hashes the sorted `dist` tree with `directory-sha256-v1`, starts an owned Vite preview, discovers system Chrome (or `WEBMCP_CHROME_PATH`), enables only `WebMCPTesting`, and drives the real `document.modelContext.getTools()` / `executeTool()` path. It invokes all six callbacks, proves there is no approval tool, validates the approved draft and pending proposal, reads the complete store-owned proof through native status, uses Playwright to click the visible UI control, and waits for valid Revision 1. Evidence schema version 2 binds the production artifact, corpus manifest, source-scope ledger, screenshot, exact proof tuple, and final applied hash.
 
 That native smoke proves browser integration and callback behavior, not model planning quality. The final sub-three-minute recording must still show GPT-5.6 Sol or Terra discovering and using the live site's tools without an injected harness.[5][6]
 
@@ -184,7 +184,7 @@ canonical CRD resolver aliases   WebMCP bridge
                original / approved draft
                   / pending proposal
                          │
-                   human-only gate
+                    UI review gate
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for component boundaries and threat controls.

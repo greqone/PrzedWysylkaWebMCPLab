@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentType } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -13,7 +20,7 @@ afterEach(() => cleanup());
 
 type AppDependencies = {
   store: WorkspaceStore;
-  loadAssetText(id: string): Promise<string>;
+  loadAssetText(id: string, signal?: AbortSignal): Promise<string>;
   validateCurrent(
     content: string,
     fileName: string,
@@ -81,6 +88,36 @@ function deferred<T>(): {
 }
 
 describe("FA(3) workbench", () => {
+  test("supports the advertised slash shortcut and a visible selected cue", async () => {
+    const module = await loadApp();
+    expect(module, "App module must exist").not.toBeNull();
+    if (!module) return;
+
+    const user = userEvent.setup();
+    render(<module.App dependencies={createDependencies()} />);
+    await waitFor(() =>
+      expect(screen.getByTestId("source-code").textContent).toContain("#nip#"),
+    );
+    const search = screen.getByRole("searchbox", {
+      name: "Search official assets",
+    }) as HTMLInputElement;
+    expect(
+      document.querySelector(".asset-item.is-selected .asset-chevron")
+        ?.textContent,
+    ).toBe("✓");
+    expect(document.activeElement).not.toBe(search);
+
+    await user.keyboard("/");
+    expect(document.activeElement).toBe(search);
+    await user.type(search, "CIRFMF");
+    await user.keyboard("/");
+    expect(search.value).toBe("CIRFMF/");
+
+    search.blur();
+    fireEvent.keyDown(document, { key: "/", ctrlKey: true });
+    expect(document.activeElement).not.toBe(search);
+  });
+
   test("keeps an agent proposal pending until human approval and revalidation", async () => {
     const module = await loadApp();
     expect(module, "App module must exist").not.toBeNull();

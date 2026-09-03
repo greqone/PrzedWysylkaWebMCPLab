@@ -82,6 +82,7 @@ Wait for `Schema valid`.
 - Use current ChatGPT Desktop with GPT-5.6 Sol or GPT-5.6 Terra.
 - Show `Site tools`, all six available tools, and the WebMCP connected state.
 - Confirm the connected state comes from the target browser's native `document.modelContext` implementation.
+- Run `npm run smoke:native` under Node `22.22.2` before recording and confirm evidence schema version 2 binds the current production artifact, corpus inputs, screenshot, and proposal-to-draft hash chain.
 - Keep Revision 0 invalidity, proposal SHA-256 proof, and the enabled human controls legible.
 - Do not inject the automated WebMCP harness into the final recording; this recording is the manual native-browser smoke.
 - Do not cut between proposal preflight and approval; the human click must be visible.
