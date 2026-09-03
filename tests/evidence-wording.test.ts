@@ -106,9 +106,13 @@ describe("evidence wording", () => {
       "Every successful WebMCP text payload is hard-limited to 1,500 serialized characters",
     );
     expect(readme).toContain("original CRLF, LF, and CR delimiters");
+    expect(readme).toContain("split a Unicode surrogate pair");
     expect(readme).toContain("`messageTruncated`");
     expect(readme).toContain("`historyHasMore`");
     expect(readme).toContain("cannot commit after cancellation");
+    expect(readme).toContain(
+      "cannot persist a validation result or proposal proof after cancellation",
+    );
     expect(readme).toContain("evidence schema version 2");
     expect(readme).toContain("deterministic production-artifact digest");
     expect(readme).toContain(
@@ -124,11 +128,19 @@ describe("evidence wording", () => {
       "preserve original CRLF, LF, and CR delimiters",
     );
     expect(submission).toContain("cannot commit after cancellation");
+    expect(submission).toContain("split a Unicode surrogate pair");
+    expect(submission).toContain(
+      "cannot persist a validation result or proposal proof after cancellation",
+    );
     expect(submission).toContain("schema version 2");
     expect(submission).toContain("production artifact digest");
 
     expect(architecture).toContain("post-abort selection commit");
     expect(architecture).toContain("UTF-16 code-unit column cursor");
+    expect(architecture).toContain("split a Unicode surrogate pair");
+    expect(architecture).toContain(
+      "cannot persist a validation result or proposal proof after cancellation",
+    );
     expect(architecture).toContain("Every successful tool text payload");
     expect(architecture).toContain("directory-sha256-v1");
   });

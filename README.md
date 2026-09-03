@@ -48,7 +48,7 @@ The page already owns the source, schema bundle, validator, and revision state. 
 | `stage_exact_replacements` | Creates an atomic pending proposal                        | 1–20 exact replacements; never applies them                          |
 | `get_workspace_status`     | Reads revision, hashes, validation, proposal, and history | Dynamically fits up to 8 newest events and reports omitted history   |
 
-Every successful WebMCP text payload is hard-limited to 1,500 serialized characters. Validation compacts untrusted diagnostic text at Unicode code-point boundaries and reports `messageTruncated`; status reports `historyHasMore`, aggregate summary truncation, and per-summary truncation. Source pages preserve the original CRLF, LF, and CR delimiters so consecutive cursor reads reconstruct the exact decoded source. Tool inputs are checked with Zod in the callback. Descriptions are static developer-authored strings. Official XML is returned as untrusted source data, and read-only tools declare `readOnlyHint`.[3]
+Every successful WebMCP text payload is hard-limited to 1,500 serialized characters. Validation compacts untrusted diagnostic text at Unicode code-point boundaries and reports `messageTruncated`; status reports `historyHasMore`, aggregate summary truncation, and per-summary truncation. Source pages preserve the original CRLF, LF, and CR delimiters so consecutive cursor reads reconstruct the exact decoded source; caller-provided columns that split a Unicode surrogate pair are rejected. Tool inputs are checked with Zod in the callback. Descriptions are static developer-authored strings. Official XML is returned as untrusted source data, and read-only tools declare `readOnlyHint`.[3]
 
 ## Complete official corpus
 
@@ -82,7 +82,7 @@ The bundled XML/XSD files are excluded from this repository's MIT license. See t
 - Original assets are immutable; proposals target the current approved revision.
 - The workspace store defaults to denying replacement proposals unless the typed registry marks the selected source as eligible FA(3) XML.
 - Runtime asset paths reject traversal, encoded path segments, backslashes, queries, and fragments before fetch.
-- Latest-wins selection and validation operation tokens reject out-of-order or stale asynchronous completions. WebMCP forwards the browser's `AbortSignal` into asset fetches, checks it after asynchronous loading, and a cancelled selection cannot commit after cancellation even if a dependency resolves later.
+- Latest-wins selection and validation operation tokens reject out-of-order or stale asynchronous completions. WebMCP forwards the browser's `AbortSignal` into asset fetches, checks it after asynchronous loading, and a cancelled selection cannot commit after cancellation even if a dependency resolves later. Aborted WebMCP validation clears its pending state immediately and cannot persist a validation result or proposal proof after cancellation even if a dependency resolves later.
 - Stale, ambiguous, duplicate, missing, or overlapping replacements fail atomically.
 - XML is rendered as escaped text, never injected as HTML.
 - The production WebMCP API is feature-detected. Unsupported browsers receive an honest status; no polyfill pretends native support.

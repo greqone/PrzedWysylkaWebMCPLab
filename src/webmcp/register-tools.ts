@@ -521,6 +521,7 @@ export async function registerWebMcpTools(
       async execute(input, options) {
         const { target } = validationInput.parse(input);
         const signal = callbackSignal(options);
+        throwIfAborted(signal, "Workspace validation");
         const state = store.getState();
         if (!state.selectedAssetId || state.draftContent === null) {
           throw new Error("Select an official XML asset before validation");
@@ -530,6 +531,10 @@ export async function registerWebMcpTools(
           throw new Error("The selected asset is not an FA(3) XML document");
         }
         const validationContext = store.startValidation(target);
+        const cancelOnAbort = () => {
+          store.cancelValidation(validationContext);
+        };
+        signal.addEventListener("abort", cancelOnAbort, { once: true });
         let result: ValidationResult;
         let contentSha256: string;
         try {
@@ -538,13 +543,19 @@ export async function registerWebMcpTools(
             `${asset.id}.xml`,
             signal,
           );
+          throwIfAborted(signal, "Workspace validation");
           contentSha256 = await store.recordValidation(
             result,
             validationContext,
           );
         } catch (error) {
           store.cancelValidation(validationContext);
+          if (signal.aborted) {
+            throwIfAborted(signal, "Workspace validation");
+          }
           throw error;
+        } finally {
+          signal.removeEventListener("abort", cancelOnAbort);
         }
         return boundedTextToolResult(
           buildValidationPayload(

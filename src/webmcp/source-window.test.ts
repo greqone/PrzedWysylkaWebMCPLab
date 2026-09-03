@@ -61,4 +61,14 @@ describe("exact official source windows", () => {
     expect(module.safeSourceBoundary("A\r\nB", 2)).toBe(1);
     expect(module.safeSourceBoundary("A😀B", 2)).toBe(1);
   });
+
+  test("rejects a caller cursor that splits a Unicode surrogate pair", async () => {
+    const module = await loadModule();
+    expect(module, "source window module must exist").not.toBeNull();
+    if (!module) return;
+
+    expect(() => module.sliceSourceWindow("A😀B", 1, 2, 1)).toThrow(
+      "startColumn splits a Unicode surrogate pair",
+    );
+  });
 });

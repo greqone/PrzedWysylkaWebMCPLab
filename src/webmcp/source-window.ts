@@ -34,6 +34,15 @@ function lineContentEnd(
   return end;
 }
 
+function splitsSurrogatePair(source: string, boundary: number): boolean {
+  if (boundary <= 0 || boundary >= source.length) return false;
+  const previous = source.charCodeAt(boundary - 1);
+  const next = source.charCodeAt(boundary);
+  return (
+    previous >= 0xd800 && previous <= 0xdbff && next >= 0xdc00 && next <= 0xdfff
+  );
+}
+
 export function sliceSourceWindow(
   source: string,
   startLine: number,
@@ -60,6 +69,9 @@ export function sliceSourceWindow(
   const contentEnd = lineContentEnd(source, startOffset, nextLineStart);
   if (startColumn > contentEnd - startOffset) {
     throw new Error("startColumn exceeds the selected line length");
+  }
+  if (splitsSurrogatePair(source, startOffset + startColumn)) {
+    throw new Error("startColumn splits a Unicode surrogate pair");
   }
 
   const endExclusive = Math.min(starts.length, startIndex + lineCount);
@@ -100,14 +112,7 @@ export function sourceCursorAfter(
 
 export function safeSourceBoundary(source: string, boundary: number): number {
   if (boundary <= 0 || boundary >= source.length) return boundary;
-  const previous = source.charCodeAt(boundary - 1);
-  const next = source.charCodeAt(boundary);
-  const splitsSurrogatePair =
-    previous >= 0xd800 &&
-    previous <= 0xdbff &&
-    next >= 0xdc00 &&
-    next <= 0xdfff;
-  if (splitsSurrogatePair) return boundary - 1;
+  if (splitsSurrogatePair(source, boundary)) return boundary - 1;
   if (source[boundary - 1] === "\r" && source[boundary] === "\n") {
     return boundary - 1;
   }

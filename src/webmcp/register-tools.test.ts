@@ -38,11 +38,14 @@ type StoreModule = {
       selectedAssetId: string | null;
       draftContent: string | null;
       pendingAssetSelection: null | { assetId: string };
+      pendingValidation: null | { target: string };
       pendingProposal: null | { proposedContent: string; summary: string };
+      validation: ValidationResult | null;
       proposalValidation: null | {
         proposedSha256: string;
         result: ValidationResult;
       };
+      history: Array<{ type: string }>;
     };
     approveProposal(proposalId: string): void;
     rejectProposal(proposalId: string): void;
@@ -309,6 +312,61 @@ describe("WebMCP registration", () => {
       pendingAssetSelection: null,
       draftContent: null,
     });
+  });
+
+  test("cancels validation state when a dependency ignores abort", async () => {
+    const modules = await loadModules();
+    expect(modules, "WebMCP and store modules must exist").not.toBeNull();
+    if (!modules) return;
+
+    const tools = new Map<string, WebMCP.ModelContextTool>();
+    const pendingValidation = deferred<ValidationResult>();
+    let receivedSignal: AbortSignal | undefined;
+    const store = modules.store.createWorkspaceStore();
+    await modules.webmcp.registerWebMcpTools(store, {
+      modelContext: {
+        async registerTool(tool: WebMCP.ModelContextTool) {
+          tools.set(tool.name, tool);
+        },
+      },
+      loadAssetText: async () => "<Faktura/>",
+      validateCurrent: async (_content, _fileName, signal) => {
+        receivedSignal = signal;
+        return pendingValidation.promise;
+      },
+    });
+    const selectSignal = new AbortController().signal;
+    await tools
+      .get("select_official_asset")
+      ?.execute({ assetId: "cirfmf-template-base" }, { signal: selectSignal });
+    const controller = new AbortController();
+    const validation = tools
+      .get("validate_workspace")
+      ?.execute({}, { signal: controller.signal });
+    const validationOutcome = Promise.resolve(validation).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (error: unknown) => ({ status: "rejected" as const, error }),
+    );
+
+    await Promise.resolve();
+    expect(store.getState().pendingValidation?.target).toBe("approved-draft");
+    controller.abort(new DOMException("Validation aborted", "AbortError"));
+    const pendingAfterAbort = store.getState().pendingValidation;
+    pendingValidation.resolve({ valid: true, findings: [], rawOutput: "" });
+
+    const outcome = await validationOutcome;
+    expect(pendingAfterAbort).toBeNull();
+    expect(outcome).toMatchObject({
+      status: "rejected",
+      error: { name: "AbortError" },
+    });
+    expect(receivedSignal).toBe(controller.signal);
+    expect(store.getState().validation).toBeNull();
+    expect(
+      store
+        .getState()
+        .history.some((entry) => entry.type === "validation-completed"),
+    ).toBe(false);
   });
 
   test("returns bounded official source excerpts with an explicit continuation", async () => {
