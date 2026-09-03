@@ -46,6 +46,91 @@ describe("evidence wording", () => {
     );
   });
 
+  test("describes approval as a UI-only capability without inventing a human actor", () => {
+    const scopedFiles = [
+      "README.md",
+      "docs/submission.md",
+      "docs/architecture.md",
+      "docs/superpowers/specs/2026-08-30-przedwysylka-webmcp-lab-design.md",
+      "docs/superpowers/specs/2026-08-31-przedwysylka-winning-pass-design.md",
+      "docs/superpowers/plans/2026-08-31-przedwysylka-winning-pass.md",
+      "src/components/HistoryPanel.tsx",
+      "src/components/ProposalPanel.tsx",
+      "src/webmcp/register-tools.ts",
+    ];
+    const forbiddenClaims = [
+      /Approved by human/iu,
+      /Rejected by human/iu,
+      /only a person can approve/iu,
+      /Approval is human-only/iu,
+      /human-only approval (?:button|control|controls)/iu,
+      /only the human UI can cross the approval boundary/iu,
+      /Approval and rejection are human-only UI events/iu,
+      /human-only gate/iu,
+      /approval, rejection, and download (?:remain|are) human-only/iu,
+      /human-approved (?:draft|revision)/iu,
+    ];
+
+    for (const relativePath of scopedFiles) {
+      const content = readFileSync(resolve(root, relativePath), "utf8");
+      for (const forbidden of forbiddenClaims) {
+        expect(content, `${relativePath}: ${forbidden}`).not.toMatch(forbidden);
+      }
+    }
+
+    const history = readFileSync(
+      resolve(root, "src/components/HistoryPanel.tsx"),
+      "utf8",
+    );
+    const readme = readFileSync(resolve(root, "README.md"), "utf8");
+    expect(history).toContain('"proposal-approved": "Approved in UI"');
+    expect(history).toContain('"proposal-rejected": "Rejected in UI"');
+    expect(readme).toContain("absent from the WebMCP capability surface");
+    expect(readme).toContain(
+      "browser automation may still actuate UI controls",
+    );
+  });
+
+  test("documents final output, cancellation, source-fidelity, and native-evidence contracts", () => {
+    const readme = readFileSync(resolve(root, "README.md"), "utf8");
+    const submission = readFileSync(
+      resolve(root, "docs/submission.md"),
+      "utf8",
+    );
+    const architecture = readFileSync(
+      resolve(root, "docs/architecture.md"),
+      "utf8",
+    );
+
+    expect(readme).toContain(
+      "Every successful WebMCP text payload is hard-limited to 1,500 serialized characters",
+    );
+    expect(readme).toContain("original CRLF, LF, and CR delimiters");
+    expect(readme).toContain("`messageTruncated`");
+    expect(readme).toContain("`historyHasMore`");
+    expect(readme).toContain("cannot commit after cancellation");
+    expect(readme).toContain("evidence schema version 2");
+    expect(readme).toContain("deterministic production-artifact digest");
+    expect(readme).toContain(
+      "preflight hash, pending-status hash, store-proof hash, and final draft hash are equal",
+    );
+
+    expect(submission).toContain(
+      "Every successful tool text payload is capped at 1,500 serialized characters",
+    );
+    expect(submission).toContain(
+      "preserve original CRLF, LF, and CR delimiters",
+    );
+    expect(submission).toContain("cannot commit after cancellation");
+    expect(submission).toContain("schema version 2");
+    expect(submission).toContain("production artifact digest");
+
+    expect(architecture).toContain("post-abort selection commit");
+    expect(architecture).toContain("UTF-16 code-unit column cursor");
+    expect(architecture).toContain("Every successful tool text payload");
+    expect(architecture).toContain("directory-sha256-v1");
+  });
+
   test("documents the native proof-carrying judge path and current clients", () => {
     const readme = readFileSync(resolve(root, "README.md"), "utf8");
     const submission = readFileSync(
@@ -81,9 +166,11 @@ describe("evidence wording", () => {
     expect(submission).toContain(
       "store derives SHA-256 from the validated-content snapshot",
     );
-    expect(submission).toContain("1,500-character serialized payload");
     expect(submission).toContain(
-      "automated Playwright click through the human-only control",
+      "Every successful tool text payload is capped at 1,500 serialized characters",
+    );
+    expect(submission).toContain(
+      "automated Playwright click through the UI-only review control",
     );
     expect(submission).not.toContain("performs a human UI click");
     expect(submission).toContain("Revision 1 validates again");

@@ -44,8 +44,8 @@ export function ProposalPanel({
           </span>
         </div>
         <p>
-          Agents may stage exact replacements. They cannot approve, download, or
-          silently mutate the draft.
+          WebMCP tools may stage exact replacements. They expose no approval or
+          download capability and cannot silently mutate the draft.
         </p>
       </section>
     );
@@ -77,7 +77,7 @@ export function ProposalPanel({
           <span className="eyebrow">Uncommitted agent work</span>
           <h2 id="proposal-title">Pending human approval</h2>
         </div>
-        <span className="pending-dot" aria-label="Pending" />
+        <span className="pending-dot" aria-hidden="true" />
       </div>
 
       <p className="proposal-summary">{proposal.summary}</p>

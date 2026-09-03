@@ -4,7 +4,21 @@ import { getAsset, listAssets } from "../assets/registry";
 import type { AssetFilter } from "../assets/types";
 import type { ValidationResult } from "../validation/types";
 import { sha256Text } from "../workspace/sha256";
-import type { WorkspaceStore } from "../workspace/types";
+import type {
+  PendingProposal,
+  WorkspaceState,
+  WorkspaceStore,
+} from "../workspace/types";
+import {
+  MAX_SERIALIZED_TOOL_RESULT_CHARS,
+  assertToolPayloadBudget,
+  truncateText,
+} from "./output-budget";
+import {
+  safeSourceBoundary,
+  sliceSourceWindow,
+  sourceCursorAfter,
+} from "./source-window";
 import { textToolResult } from "./tool-result";
 
 const listInput = z
@@ -47,7 +61,6 @@ const replacementInput = z
   .strict();
 
 const emptyInput = z.object({}).strict();
-const MAX_SERIALIZED_TOOL_RESULT_CHARS = 1_500;
 const validationInput = z
   .object({
     target: z
@@ -62,41 +75,213 @@ function callbackSignal(
   return options?.signal ?? new AbortController().signal;
 }
 
-function sourceCursorAfter(
-  source: string,
-  consumedCharacters: number,
-  startLine: number,
-  startColumn: number,
-): { line: number; column: number } {
-  let line = startLine;
-  let column = startColumn;
-  for (let index = 0; index < consumedCharacters; index += 1) {
-    const character = source[index];
-    if (character === "\n") {
-      line += 1;
-      column = 0;
-    } else {
-      column += 1;
-    }
-  }
-  return { line, column };
+function boundedTextToolResult(payload: unknown, label: string) {
+  assertToolPayloadBudget(payload, label);
+  return textToolResult(payload);
 }
 
-function safeSourceBoundary(source: string, boundary: number): number {
-  if (boundary <= 0 || boundary >= source.length) return boundary;
-  const previous = source.charCodeAt(boundary - 1);
-  const next = source.charCodeAt(boundary);
-  const splitsSurrogatePair =
-    previous >= 0xd800 &&
-    previous <= 0xdbff &&
-    next >= 0xdc00 &&
-    next <= 0xdfff;
-  return splitsSurrogatePair ? boundary - 1 : boundary;
+interface ValidationPayloadBase {
+  target: "approved-draft" | "pending-proposal";
+  proposalId: string | null;
+  contentSha256: string;
+  valid: boolean;
+  findingCount: number;
+  revision: number;
+}
+
+function buildValidationPayload(
+  base: ValidationPayloadBase,
+  result: ValidationResult,
+): unknown {
+  const maximumFindings = Math.min(result.findings.length, 5);
+  for (
+    let returnedFindings = maximumFindings;
+    returnedFindings >= 0;
+    returnedFindings -= 1
+  ) {
+    let lower = 0;
+    let upper = 500;
+    let best: unknown = null;
+    while (lower <= upper) {
+      const messageLimit = Math.floor((lower + upper) / 2);
+      const findings = result.findings
+        .slice(0, returnedFindings)
+        .map((finding) => {
+          const fileName =
+            finding.fileName === null
+              ? null
+              : truncateText(finding.fileName, 80);
+          const message = truncateText(finding.message, messageLimit);
+          return {
+            fileName: fileName?.value ?? null,
+            fileNameTruncated: fileName?.truncated ?? false,
+            line: finding.line,
+            message: message.value,
+            messageTruncated: message.truncated,
+          };
+        });
+      const findingTextTruncated = findings.some(
+        (finding) => finding.fileNameTruncated || finding.messageTruncated,
+      );
+      const payload = {
+        ...base,
+        returnedFindings: findings.length,
+        findings,
+        findingTextTruncated,
+        truncated:
+          findings.length < result.findings.length || findingTextTruncated,
+      };
+      if (JSON.stringify(payload).length <= MAX_SERIALIZED_TOOL_RESULT_CHARS) {
+        best = payload;
+        lower = messageLimit + 1;
+      } else {
+        upper = messageLimit - 1;
+      }
+    }
+    if (best !== null) {
+      assertToolPayloadBudget(best, "validate_workspace result");
+      return best;
+    }
+  }
+  throw new Error("Validation metadata exceeds the WebMCP output budget");
+}
+
+function buildStagedProposalPayload(proposal: PendingProposal): unknown {
+  let lower = 0;
+  let upper = Array.from(proposal.summary).length;
+  let best: unknown = null;
+  while (lower <= upper) {
+    const summaryLimit = Math.floor((lower + upper) / 2);
+    const summary = truncateText(proposal.summary, summaryLimit);
+    const payload = {
+      status: "pending-human-approval",
+      proposalId: proposal.id,
+      baseRevision: proposal.baseRevision,
+      replacementCount: proposal.replacements.length,
+      summary: summary.value,
+      summaryTruncated: summary.truncated,
+    };
+    if (JSON.stringify(payload).length <= MAX_SERIALIZED_TOOL_RESULT_CHARS) {
+      best = payload;
+      lower = summaryLimit + 1;
+    } else {
+      upper = summaryLimit - 1;
+    }
+  }
+  if (best !== null) {
+    assertToolPayloadBudget(best, "stage_exact_replacements result");
+    return best;
+  }
+  throw new Error("Proposal metadata exceeds the WebMCP output budget");
+}
+
+interface WorkspaceHashes {
+  originalSha256: string | null;
+  draftSha256: string | null;
+  proposalSha256: string | null;
+}
+
+function buildStatusPayload(
+  state: Readonly<WorkspaceState>,
+  hashes: WorkspaceHashes,
+): unknown {
+  const maximumHistory = Math.min(state.history.length, 8);
+  for (
+    let historyCount = maximumHistory;
+    historyCount >= 0;
+    historyCount -= 1
+  ) {
+    let lower = 0;
+    let upper = 200;
+    let best: unknown = null;
+    while (lower <= upper) {
+      const textLimit = Math.floor((lower + upper) / 2);
+      const proposalSummary = state.pendingProposal
+        ? truncateText(state.pendingProposal.summary, textLimit)
+        : null;
+      const history = state.history
+        .slice(state.history.length - historyCount)
+        .map((entry) => {
+          const summary = truncateText(entry.summary, textLimit);
+          return {
+            id: entry.id,
+            at: entry.at,
+            type: entry.type,
+            summary: summary.value,
+            summaryTruncated: summary.truncated,
+          };
+        });
+      const historySummariesTruncated = history.some(
+        (entry) => entry.summaryTruncated,
+      );
+      const payload = {
+        selectedAssetId: state.selectedAssetId,
+        revision: state.revision,
+        documentGeneration: state.documentGeneration,
+        originalSha256: hashes.originalSha256,
+        draftSha256: hashes.draftSha256,
+        validation: state.validation
+          ? {
+              valid: state.validation.valid,
+              findingCount: state.validation.findings.length,
+            }
+          : null,
+        pendingProposal: state.pendingProposal
+          ? {
+              id: state.pendingProposal.id,
+              baseRevision: state.pendingProposal.baseRevision,
+              summary: proposalSummary?.value ?? "",
+              summaryTruncated: proposalSummary?.truncated ?? false,
+              replacementCount: state.pendingProposal.replacements.length,
+              proposedSha256: hashes.proposalSha256,
+              validation:
+                state.proposalValidation?.proposalId ===
+                state.pendingProposal.id
+                  ? {
+                      assetId: state.proposalValidation.assetId,
+                      proposalId: state.proposalValidation.proposalId,
+                      baseRevision: state.proposalValidation.baseRevision,
+                      documentGeneration:
+                        state.proposalValidation.documentGeneration,
+                      valid: state.proposalValidation.result.valid,
+                      findingCount:
+                        state.proposalValidation.result.findings.length,
+                      proposedSha256: state.proposalValidation.proposedSha256,
+                    }
+                  : null,
+            }
+          : null,
+        historyTotal: state.history.length,
+        historyReturned: history.length,
+        historyHasMore: state.history.length > history.length,
+        historySummariesTruncated,
+        history,
+      };
+      if (JSON.stringify(payload).length <= MAX_SERIALIZED_TOOL_RESULT_CHARS) {
+        best = payload;
+        lower = textLimit + 1;
+      } else {
+        upper = textLimit - 1;
+      }
+    }
+    if (best !== null) {
+      assertToolPayloadBudget(best, "get_workspace_status result");
+      return best;
+    }
+  }
+  throw new Error("Workspace metadata exceeds the WebMCP output budget");
+}
+
+function throwIfAborted(signal: AbortSignal, label: string): void {
+  if (!signal.aborted) return;
+  throw signal.reason instanceof Error
+    ? signal.reason
+    : new DOMException(`${label} aborted`, "AbortError");
 }
 
 export interface WebMcpDependencies {
   modelContext?: Pick<WebMCP.ModelContext, "registerTool">;
-  loadAssetText(id: string): Promise<string>;
+  loadAssetText(id: string, signal?: AbortSignal): Promise<string>;
   validateCurrent(
     content: string,
     fileName: string,
@@ -134,8 +319,8 @@ export async function registerWebMcpTools(
         type: "object",
         properties: {
           kind: { type: "string", enum: ["xml", "xsd"] },
-          role: { type: "string" },
-          search: { type: "string" },
+          role: { type: "string", maxLength: 80 },
+          search: { type: "string", maxLength: 200 },
           offset: { type: "integer", minimum: 0, default: 0 },
           limit: { type: "integer", minimum: 1, maximum: 6, default: 6 },
         },
@@ -162,15 +347,18 @@ export async function registerWebMcpTools(
           parsed.offset + assets.length < matching.length
             ? parsed.offset + assets.length
             : null;
-        return textToolResult({
-          total: matching.length,
-          returned: assets.length,
-          offset: parsed.offset,
-          limit: parsed.limit,
-          hasMore: nextOffset !== null,
-          nextOffset,
-          assets,
-        });
+        return boundedTextToolResult(
+          {
+            total: matching.length,
+            returned: assets.length,
+            offset: parsed.offset,
+            limit: parsed.limit,
+            hasMore: nextOffset !== null,
+            nextOffset,
+            assets,
+          },
+          "list_official_assets result",
+        );
       },
     },
     {
@@ -181,7 +369,7 @@ export async function registerWebMcpTools(
       inputSchema: {
         type: "object",
         properties: {
-          assetId: { type: "string" },
+          assetId: { type: "string", maxLength: 128 },
           startLine: { type: "integer", minimum: 1, default: 1 },
           startColumn: { type: "integer", minimum: 0, default: 0 },
           lineCount: {
@@ -195,44 +383,36 @@ export async function registerWebMcpTools(
         additionalProperties: false,
       },
       annotations: { readOnlyHint: true, untrustedContentHint: true },
-      async execute(input) {
+      async execute(input, options) {
         const { assetId, startLine, startColumn, lineCount } =
           readInput.parse(input);
+        const signal = callbackSignal(options);
+        throwIfAborted(signal, "Official asset read");
         const asset = getAsset(assetId);
-        const lines = (await dependencies.loadAssetText(assetId)).split(
-          /\r\n|\n|\r/u,
+        const source = await dependencies.loadAssetText(assetId, signal);
+        throwIfAborted(signal, "Official asset read");
+        const sourceWindow = sliceSourceWindow(
+          source,
+          startLine,
+          startColumn,
+          lineCount,
         );
-        const startIndex = startLine - 1;
-        const firstLine = lines[startIndex];
-        if (firstLine === undefined) {
-          throw new Error("startLine exceeds the official asset length");
-        }
-        if (startColumn > firstLine.length) {
-          throw new Error("startColumn exceeds the selected line length");
-        }
-        const endExclusive = Math.min(lines.length, startIndex + lineCount);
-        const selected = [
-          firstLine.slice(startColumn),
-          ...lines.slice(startIndex + 1, endExclusive),
-        ];
-        const sourceWindow = selected.join("\n");
         const payloadFor = (consumedCharacters: number) => {
           const cursor = sourceCursorAfter(
-            sourceWindow,
+            sourceWindow.text,
             consumedCharacters,
             startLine,
             startColumn,
           );
-          const windowTruncated = consumedCharacters < sourceWindow.length;
-          const moreLines = endExclusive < lines.length;
+          const windowTruncated = consumedCharacters < sourceWindow.text.length;
           const nextLine = windowTruncated
             ? cursor.line
-            : moreLines
-              ? endExclusive + 1
+            : sourceWindow.hasMore
+              ? sourceWindow.endLine + 1
               : null;
           const nextColumn = windowTruncated
             ? cursor.column
-            : moreLines
+            : sourceWindow.hasMore
               ? 0
               : null;
           return {
@@ -244,20 +424,20 @@ export async function registerWebMcpTools(
             },
             range: {
               startLine,
-              endLine: cursor.line,
-              totalLines: lines.length,
+              endLine: windowTruncated ? cursor.line : sourceWindow.endLine,
+              totalLines: sourceWindow.totalLines,
             },
             returnedCharacters: consumedCharacters,
             maxSerializedCharacters: MAX_SERIALIZED_TOOL_RESULT_CHARS,
             truncated: nextLine !== null,
             nextLine,
             nextColumn,
-            source: sourceWindow.slice(0, consumedCharacters),
+            source: sourceWindow.text.slice(0, consumedCharacters),
             trust: "untrusted-official-source-data",
           };
         };
         let lower = 0;
-        let upper = sourceWindow.length;
+        let upper = sourceWindow.text.length;
         while (lower < upper) {
           const candidate = Math.ceil((lower + upper) / 2);
           if (
@@ -269,13 +449,15 @@ export async function registerWebMcpTools(
             upper = candidate - 1;
           }
         }
-        const payload = payloadFor(safeSourceBoundary(sourceWindow, lower));
+        const payload = payloadFor(
+          safeSourceBoundary(sourceWindow.text, lower),
+        );
         if (JSON.stringify(payload).length > MAX_SERIALIZED_TOOL_RESULT_CHARS) {
           throw new Error(
             "Official asset metadata exceeds the tool output budget",
           );
         }
-        return textToolResult(payload);
+        return boundedTextToolResult(payload, "read_official_asset result");
       },
     },
     {
@@ -285,39 +467,45 @@ export async function registerWebMcpTools(
         "Select an official asset in the shared human-agent workbench and load its immutable source into view.",
       inputSchema: {
         type: "object",
-        properties: { assetId: { type: "string" } },
+        properties: { assetId: { type: "string", maxLength: 128 } },
         required: ["assetId"],
         additionalProperties: false,
       },
       annotations: { readOnlyHint: false },
-      async execute(input) {
+      async execute(input, options) {
         const { assetId } = selectInput.parse(input);
+        const signal = callbackSignal(options);
+        throwIfAborted(signal, "Official asset selection");
         const asset = getAsset(assetId);
         const selectionContext = store.beginAssetSelection(assetId);
         try {
-          const content = await dependencies.loadAssetText(assetId);
+          const content = await dependencies.loadAssetText(assetId, signal);
+          throwIfAborted(signal, "Official asset selection");
           store.completeAssetSelection(selectionContext, content);
         } catch (error) {
           store.cancelAssetSelection(selectionContext);
           throw error;
         }
-        return textToolResult({
-          status: "selected",
-          asset: {
-            id: asset.id,
-            title: asset.title,
-            kind: asset.kind,
-            role: asset.role,
+        return boundedTextToolResult(
+          {
+            status: "selected",
+            asset: {
+              id: asset.id,
+              title: asset.title,
+              kind: asset.kind,
+              role: asset.role,
+            },
+            bytes: asset.bytes,
           },
-          bytes: asset.bytes,
-        });
+          "select_official_asset result",
+        );
       },
     },
     {
       name: "validate_workspace",
       title: "Validate approved or proposed XML",
       description:
-        "Validate either the current human-approved draft or the exact pending proposal against the canonical four-file CRD FA(3) schema closure and mirror proof into the UI.",
+        "Validate either the current approved draft or the exact pending proposal against the canonical four-file CRD FA(3) schema closure and mirror proof into the UI.",
       inputSchema: {
         type: "object",
         properties: {
@@ -358,24 +546,27 @@ export async function registerWebMcpTools(
           store.cancelValidation(validationContext);
           throw error;
         }
-        return textToolResult({
-          target,
-          proposalId: validationContext.proposalId,
-          contentSha256,
-          valid: result.valid,
-          findingCount: result.findings.length,
-          returnedFindings: Math.min(result.findings.length, 5),
-          findings: result.findings.slice(0, 5),
-          truncated: result.findings.length > 5,
-          revision: store.getState().revision,
-        });
+        return boundedTextToolResult(
+          buildValidationPayload(
+            {
+              target,
+              proposalId: validationContext.proposalId,
+              contentSha256,
+              valid: result.valid,
+              findingCount: result.findings.length,
+              revision: store.getState().revision,
+            },
+            result,
+          ),
+          "validate_workspace result",
+        );
       },
     },
     {
       name: "stage_exact_replacements",
       title: "Stage exact XML replacements",
       description:
-        "Stage one to twenty exact, non-overlapping replacements against the current approved draft. This creates a visible pending proposal and never applies it; only the human approval button can do that.",
+        "Stage one to twenty exact, non-overlapping replacements against the current approved draft. This creates a visible pending proposal and never applies it; only the visible UI review control can apply it.",
       inputSchema: {
         type: "object",
         properties: {
@@ -387,9 +578,9 @@ export async function registerWebMcpTools(
             items: {
               type: "object",
               properties: {
-                search: { type: "string", minLength: 1 },
-                replacement: { type: "string" },
-                reason: { type: "string", minLength: 1 },
+                search: { type: "string", minLength: 1, maxLength: 20_000 },
+                replacement: { type: "string", maxLength: 100_000 },
+                reason: { type: "string", minLength: 1, maxLength: 500 },
               },
               required: ["search", "replacement", "reason"],
               additionalProperties: false,
@@ -410,13 +601,10 @@ export async function registerWebMcpTools(
           throw new Error("The selected asset is not an FA(3) XML document");
         }
         const proposal = store.stageProposal(replacementInput.parse(input));
-        return textToolResult({
-          status: "pending-human-approval",
-          proposalId: proposal.id,
-          baseRevision: proposal.baseRevision,
-          replacementCount: proposal.replacements.length,
-          summary: proposal.summary,
-        });
+        return boundedTextToolResult(
+          buildStagedProposalPayload(proposal),
+          "stage_exact_replacements result",
+        );
       },
     },
     {
@@ -440,45 +628,14 @@ export async function registerWebMcpTools(
             sha256Text(state.pendingProposal?.proposedContent ?? null),
           ],
         );
-        return textToolResult({
-          selectedAssetId: state.selectedAssetId,
-          revision: state.revision,
-          originalSha256,
-          draftSha256,
-          validation: state.validation
-            ? {
-                valid: state.validation.valid,
-                findingCount: state.validation.findings.length,
-              }
-            : null,
-          pendingProposal: state.pendingProposal
-            ? {
-                id: state.pendingProposal.id,
-                baseRevision: state.pendingProposal.baseRevision,
-                summary: state.pendingProposal.summary,
-                replacementCount: state.pendingProposal.replacements.length,
-                proposedSha256: proposalSha256,
-                validation:
-                  state.proposalValidation?.proposalId ===
-                  state.pendingProposal.id
-                    ? {
-                        valid: state.proposalValidation.result.valid,
-                        findingCount:
-                          state.proposalValidation.result.findings.length,
-                        proposedSha256: state.proposalValidation.proposedSha256,
-                      }
-                    : null,
-              }
-            : null,
-          historyTotal: state.history.length,
-          historyReturned: Math.min(state.history.length, 8),
-          history: state.history.slice(-8).map((entry) => ({
-            id: entry.id,
-            at: entry.at,
-            type: entry.type,
-            summary: entry.summary,
-          })),
-        });
+        return boundedTextToolResult(
+          buildStatusPayload(state, {
+            originalSha256,
+            draftSha256,
+            proposalSha256,
+          }),
+          "get_workspace_status result",
+        );
       },
     },
   ];

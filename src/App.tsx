@@ -37,7 +37,7 @@ const assets = listAssets();
 
 export interface AppDependencies {
   store: WorkspaceStore;
-  loadAssetText(id: string): Promise<string>;
+  loadAssetText(id: string, signal?: AbortSignal): Promise<string>;
   validateCurrent(
     content: string,
     fileName: string,
@@ -60,7 +60,13 @@ export function App({ dependencies }: { dependencies?: AppDependencies }) {
     }),
   );
   const store = dependencies?.store ?? ownedStore;
-  const loadText = dependencies?.loadAssetText ?? loadAssetText;
+  const loadText = useCallback(
+    (id: string, signal?: AbortSignal) =>
+      dependencies?.loadAssetText
+        ? dependencies.loadAssetText(id, signal)
+        : loadAssetText(id, signal ? { signal } : {}),
+    [dependencies],
+  );
   const schemaBundle = useRef<ReturnType<
     typeof buildCanonicalSchemaBundle
   > | null>(null);

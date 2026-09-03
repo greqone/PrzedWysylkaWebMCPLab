@@ -6,7 +6,7 @@ PrzedWysylka WebMCP Lab
 
 ## Tagline
 
-A browser-local FA(3) workbench where an agent can prove a repair, but only a person can approve it.
+A browser-local FA(3) workbench where an agent can prove a repair while approval remains a visible UI decision.
 
 ## Submission status
 
@@ -22,7 +22,7 @@ PrzedWysylka WebMCP Lab is a browser-local workbench for Poland's official FA(3)
 
 The demo starts with an official parameterized template at Revision 0. It is intentionally invalid. The agent uses six narrow WebMCP tools to find the source, validate the approved draft, stage two exact replacements, and validate the pending proposal. The UI then shows a schema-valid SHA-256 proof bound to the proposal and its base revision.
 
-The agent stops there. No approval tool exists. A human UI click creates Revision 1, clears the proposal, and runs canonical validation again. Revision 1 validates again before the workflow is complete.
+The agent stops there. No approval tool exists. The visible UI review control creates Revision 1, clears the proposal, and runs canonical validation again. In the intended workflow and final recording, the person performs that action. Revision 1 validates again before the workflow is complete.
 
 ## The problem and audience
 
@@ -34,7 +34,7 @@ Visual browser automation is a poor fit for this work. It has to infer the selec
 
 WebMCP exposes the capabilities the page already owns: locked sources, current selection, canonical validation, proposal staging, and revision state. The agent receives structured actions and bounded results. The person sees every state change in the same interface.
 
-The important design choice is omission. Approval, rejection, download, upload, and submission are not agent capabilities. Human authority does not depend on a prompt asking the model to behave.
+The important design choice is omission. Approval, rejection, download, upload, and submission are not WebMCP capabilities. The agent-facing contract does not depend on a prompt asking the model to behave; the final decision remains visible in the page UI.
 
 ## What becomes better
 
@@ -46,7 +46,7 @@ Before WebMCP, an agent would need to inspect DOM text, guess which schema and r
 4. read only the relevant lines;
 5. stage two exact replacements;
 6. validate the exact pending bytes and return their SHA-256;
-7. stop at a visible human approval gate.
+7. stop at a visible UI approval gate.
 
 The human sees the same selected file, finding, proposal, and audit trail throughout the flow.
 
@@ -54,7 +54,7 @@ The human sees the same selected file, finding, proposal, and audit trail throug
 
 The app feature-detects `document.modelContext` and registers six imperative tools with `document.modelContext.registerTool()`. Tool definitions use static descriptions, JSON input schemas, read-only/untrusted-content annotations where applicable, Zod validation inside callbacks, and one AbortController for lifecycle cleanup.
 
-All callbacks reuse the asset registry, validator, replacement engine, and workspace store used by the human UI. Lists return at most six records per page, source reads return at most 30 lines within a hard 1,500-character serialized payload and expose a line-and-column cursor, validation returns the full finding count plus at most five finding objects, and status returns the latest eight history events with a total count. There is no silent truncation.
+All callbacks reuse the asset registry, validator, replacement engine, and workspace store used by the visible UI. Every successful tool text payload is capped at 1,500 serialized characters. Lists return at most six records per page. Source windows preserve original CRLF, LF, and CR delimiters and expose a line and UTF-16-code-unit column cursor. Validation returns the full finding count plus up to five compact summaries with explicit filename/message truncation flags; status dynamically fits up to eight newest events and reports omitted history and truncated summaries. The browser's `AbortSignal` reaches asset fetches, and a cancelled selection cannot commit after cancellation even when a dependency resolves later.
 
 `validate_workspace` accepts either the current approved draft or the pending proposal. The store derives SHA-256 from the validated-content snapshot, rechecks state after the asynchronous digest, and records the asset ID, `proposalId`, `baseRevision`, document generation, result, and `proposedSha256`. Approval fails closed unless that proof is current, valid, and bound to the same bytes. Unsupported browsers receive no polyfill and display an honest compatibility state.
 
@@ -66,7 +66,7 @@ All callbacks reuse the asset registry, validator, replacement engine, and works
 - All 55 official records are SHA-256 and byte-count locked.
 - Original sources remain immutable.
 - Exact replacements must be unique and non-overlapping.
-- Approval is human-only and stale proposals fail closed.
+- Approval is absent from WebMCP, remains a visible UI decision, and stale proposals fail closed.
 - XML is rendered as escaped text and marked untrusted when returned through WebMCP.
 
 ## Built with
@@ -80,9 +80,9 @@ All callbacks reuse the asset registry, validator, replacement engine, and works
 
 ## Verification evidence
 
-The strongest artifact is a proof-bound native Chrome smoke against the production build. It uses Chrome's real `document.modelContext`, registers exactly six tools, executes all six callbacks, confirms there is no agent approval tool, records the invalid approved draft, obtains a schema-valid SHA-256 proof for the pending proposal, unlocks approval, performs an automated Playwright click through the human-only control, and waits until Revision 1 validates again. This proves that the UI gate is enforced and traversable; it does not claim that a person approved the automated smoke. The JSON reports `nativeModelContext: true`, `injectedHarness: false`, and no runtime errors. See [`native-webmcp-smoke.json`](assets/native-webmcp-smoke.json) and the bound [`native-workbench.png`](assets/native-workbench.png).
+The strongest artifact is a proof-bound native Chrome smoke against the production build. Evidence schema version 2 records the exact Node and Chrome versions, a deterministic production artifact digest, corpus manifest and source-scope hashes, and the screenshot hash. It uses Chrome's real `document.modelContext`, registers exactly six tools, executes all six callbacks, confirms there is no WebMCP approval tool, and proves equality from proposal preflight through pending status and store-owned proof to the final applied draft. It performs an automated Playwright click through the UI-only review control and waits until Revision 1 validates again. This proves that the UI gate is enforced and traversable; it does not claim that a person approved the automated smoke. The JSON reports `nativeModelContext: true`, `injectedHarness: false`, and no runtime errors. See [`native-webmcp-smoke.json`](assets/native-webmcp-smoke.json) and the bound [`native-workbench.png`](assets/native-workbench.png).
 
-The deterministic Playwright E2E suite separately uses a standards-shaped injected WebMCP harness. It covers registration, shared state, proposal gating, human approval, ordinary-browser fallback, and Axe. The injected harness does not prove browser-native WebMCP API, permission, or agent compatibility; the native smoke covers the browser callback boundary, while the final ChatGPT recording must still demonstrate model-driven tool choice.
+The deterministic Playwright E2E suite separately uses a standards-shaped injected WebMCP harness. It covers registration, shared state, proposal gating, the UI approval path, ordinary-browser fallback, and Axe. The injected harness does not prove browser-native WebMCP API, permission, or agent compatibility; the native smoke covers the browser callback boundary, while the final ChatGPT recording must still demonstrate model-driven tool choice.
 
 The data evidence is deliberately separate:
 
@@ -99,7 +99,7 @@ WebMCP is the primary interaction contract, not a decorative endpoint. The full 
 
 ### Execution
 
-The project is a complete static product experience with official data, real XSD validation, proposal diffs, human controls, history, provenance, responsive UI, reproducible build, CI, and E2E proof.
+The project is a complete static product experience with official data, real XSD validation, proposal diffs, visible UI controls, history, provenance, responsive UI, reproducible build, CI, and E2E proof.
 
 ### Potential impact
 
@@ -107,4 +107,4 @@ Structured regulatory XML is high-friction and error-prone. The pattern generali
 
 ### Creativity and ambition
 
-The project treats the web page as a shared review room—not a UI to bypass—and encodes human authority by removing approval from the agent capability surface entirely.
+The project treats the web page as a shared review room—not a UI to bypass—and removes approval from the WebMCP capability surface while keeping the final decision visible in the interface.

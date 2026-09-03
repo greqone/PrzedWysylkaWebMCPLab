@@ -5,8 +5,8 @@ const eventLabels: Record<WorkspaceEvent["type"], string> = {
   "validation-completed": "Validated",
   "proposal-staged": "Staged",
   "proposal-validation-completed": "Proposal preflight",
-  "proposal-approved": "Approved by human",
-  "proposal-rejected": "Rejected by human",
+  "proposal-approved": "Approved in UI",
+  "proposal-rejected": "Rejected in UI",
 };
 
 export function HistoryPanel({ history }: { history: WorkspaceEvent[] }) {

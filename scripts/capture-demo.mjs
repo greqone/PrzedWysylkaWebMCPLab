@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { once } from "node:events";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -43,68 +42,79 @@ const server = spawn(
   { stdio: ["ignore", "pipe", "pipe"] },
 );
 let serverOutput = "";
-let ownedReady = false;
-const ownedReadiness = new Promise((resolvePromise, reject) => {
-  const append = (chunk) => {
-    serverOutput += String(chunk);
-    const plainOutput = serverOutput.replace(ansiColorPattern, "");
-    if (
-      !ownedReady &&
-      plainOutput.includes("Local:") &&
-      plainOutput.includes(baseUrl)
-    ) {
-      ownedReady = true;
-      resolvePromise();
-    }
-  };
-  server.stdout.on("data", append);
-  server.stderr.on("data", append);
-  server.once("exit", (code, signal) => {
-    if (!ownedReady) {
-      reject(
-        new Error(
-          `Preview server exited before owned readiness (code ${code}, signal ${signal ?? "none"})${serverOutput ? `:\n${serverOutput}` : ""}`,
-        ),
-      );
-    }
+let serverCloseState = null;
+const serverClosed = new Promise((resolvePromise) => {
+  server.once("close", (code, signal) => {
+    serverCloseState = { code, signal };
+    resolvePromise(serverCloseState);
   });
 });
+server.on("error", (error) => {
+  serverOutput += `\nspawn error: ${error.message}`;
+});
+for (const stream of [server.stdout, server.stderr]) {
+  stream.on("data", (chunk) => {
+    serverOutput += String(chunk);
+  });
+}
+
+function delay(milliseconds) {
+  return new Promise((resolvePromise) =>
+    setTimeout(resolvePromise, milliseconds),
+  );
+}
 
 async function waitForServer() {
-  let readinessTimeout;
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (serverCloseState !== null) {
+      throw new Error(
+        `Preview server exited before owned readiness (${JSON.stringify(serverCloseState)})${serverOutput ? `:\n${serverOutput}` : ""}`,
+      );
+    }
+    const plainOutput = serverOutput.replace(ansiColorPattern, "");
+    if (plainOutput.includes("Local:") && plainOutput.includes(baseUrl)) {
+      try {
+        const response = await fetch(baseUrl, { cache: "no-store" });
+        if (response.ok) return;
+      } catch {
+        // The owned process has announced the URL but is still binding it.
+      }
+    }
+    await delay(100);
+  }
+  throw new Error(
+    `Preview server did not become ready at ${baseUrl}${serverOutput ? `:\n${serverOutput}` : ""}`,
+  );
+}
+
+async function waitForServerClose(timeoutMilliseconds = 5_000) {
+  let timeoutId;
   try {
     await Promise.race([
-      ownedReadiness,
+      serverClosed,
       new Promise((_, reject) => {
-        readinessTimeout = setTimeout(
-          () =>
-            reject(
-              new Error(
-                `Preview server did not report owned readiness${serverOutput ? `:\n${serverOutput}` : ""}`,
-              ),
-            ),
-          10_000,
+        timeoutId = setTimeout(
+          () => reject(new Error("Owned preview did not close in time")),
+          timeoutMilliseconds,
         );
       }),
     ]);
   } finally {
-    clearTimeout(readinessTimeout);
+    clearTimeout(timeoutId);
   }
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    if (server && server.exitCode !== null) {
-      throw new Error(
-        `Preview server exited before readiness with code ${server.exitCode}`,
-      );
-    }
-    try {
-      const response = await fetch(baseUrl);
-      if (response.ok) return;
-    } catch {
-      // The preview process is still binding the local socket.
-    }
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+}
+
+async function stopOwnedPreview() {
+  if (serverCloseState !== null) return;
+  server.kill();
+  try {
+    await waitForServerClose();
+    return;
+  } catch {
+    // Escalate only while the pre-attached close promise is still pending.
   }
-  throw new Error(`Preview server did not become ready at ${baseUrl}`);
+  if (serverCloseState === null) server.kill("SIGKILL");
+  await waitForServerClose();
 }
 
 let browser = null;
@@ -203,7 +213,7 @@ try {
     .getByRole("button", { name: "Approve changes" })
     .isEnabled();
   if (!approvalEnabled) {
-    throw new Error("Human approval did not unlock after proposal preflight");
+    throw new Error("UI approval did not unlock after proposal preflight");
   }
   const screenshotBytes = await page.screenshot({ fullPage: true });
 
@@ -251,9 +261,9 @@ try {
     `Demo screenshot and provenance written to ${output} using the injected six-tool WebMCP harness`,
   );
 } finally {
-  await browser?.close();
-  if (server && server.exitCode === null) {
-    server.kill();
-    await once(server, "exit", { signal: AbortSignal.timeout(5_000) });
+  try {
+    await browser?.close();
+  } finally {
+    await stopOwnedPreview();
   }
 }

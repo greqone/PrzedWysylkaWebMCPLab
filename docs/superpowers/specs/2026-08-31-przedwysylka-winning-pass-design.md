@@ -15,7 +15,7 @@ The work does not add customer XML upload, a backend, accounts, KSeF submission,
 ## Constraints
 
 - Keep exactly six imperative, top-level WebMCP tools.
-- Keep approval, rejection, and download human-only.
+- Keep approval, rejection, and download absent from WebMCP and visible in the UI.
 - Keep every official source asset immutable and preserve the 55-record frozen corpus.
 - Preserve the ordinary-browser human UI and manual demo fallback.
 - Keep validation browser-local and use the canonical four-file CRD closure.
@@ -43,7 +43,7 @@ A pending proposal receives a separate schema-validation proof before approval. 
 
 The workspace store owns validation contexts for two targets:
 
-- `approved-draft` — the current human-approved revision;
+- `approved-draft` — the current approved revision;
 - `pending-proposal` — the exact staged content.
 
 A pending-proposal validation result is accepted only when the context still matches the current proposal and document generation. Selecting another asset, rejecting the proposal, staging another proposal, or approving it invalidates the proof. Out-of-order validations fail closed.
@@ -109,7 +109,7 @@ The guide presents three compact steps:
 
 1. **Agent proposes** — structured tools inspect and stage exact edits.
 2. **Schema proves** — canonical XSD preflights the pending content.
-3. **Human approves** — only the visible UI can apply the proven proposal.
+3. **Human approves** — the intended person-in-the-loop workflow uses the visible UI; WebMCP exposes no apply capability.
 
 It retains the exact prompt and adds a `Copy prompt` control. The header uses the same three-part message.
 
@@ -129,7 +129,7 @@ Add an optional `npm run smoke:native` command that:
 4. verifies native `document.modelContext` and exactly six tools;
 5. executes list, select, approved-draft validation, bounded read, stage, and pending-proposal validation through native `executeTool()`;
 6. proves there is no agent approval/apply/download tool;
-7. uses Playwright to click the visible human-only approval button;
+7. uses Playwright to click the visible UI-only approval control;
 8. verifies revision `1`, no pending proposal, and a valid approved draft;
 9. fails on console, page, HTTP, or request errors;
 10. writes deterministic evidence JSON and a pre-approval screenshot under `docs/assets/`.
